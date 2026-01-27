@@ -39,17 +39,9 @@ const CardMediaOverlay = ({ post, voteScore, setShowCardMediaOverlay }) => {
   }, [setShowCardMediaOverlay]);
 
   useEffect(() => {
-    if (true) {
-      const width = document.body.clientWidth;
-      document.documentElement.style.setProperty("--overflow", "hidden hidden");
-      document.body.style.width = `${width}px`;
-    } else {
-      document.documentElement.style.setProperty(
-        "--overflow",
-        "hidden visible"
-      );
-      document.body.style.width = `auto`;
-    }
+    const width = document.body.clientWidth;
+    document.documentElement.style.setProperty("--overflow", "hidden hidden");
+    document.body.style.width = `${width}px`;
 
     return () => {
       document.documentElement.style.setProperty(
@@ -64,7 +56,7 @@ const CardMediaOverlay = ({ post, voteScore, setShowCardMediaOverlay }) => {
     <div
       className="fixed inset-0 z-[999] bg-black/40"
       onContextMenuCapture={(e) => {
-        if (true || windowWidth < 640) {
+        if (windowWidth < 640) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -90,11 +82,11 @@ const CardMediaOverlay = ({ post, voteScore, setShowCardMediaOverlay }) => {
             height: `${mediaHeight}px`,
           }}
           onContextMenuCapture={(e) => {
-            if (true || windowWidth < 640) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
+          if (windowWidth < 640) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
         >
           <Media
             post={post}

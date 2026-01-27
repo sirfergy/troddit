@@ -154,7 +154,7 @@ const useFeed = (params?: Params) => {
       }
       
     } catch (error) {
-      if (error?.["response"]?.["status"] === 429 || true) {
+      if (error?.["response"]?.["status"] === 429) {
         //rate limited
         const timeout = parseInt(
           error?.["response"]?.["headers"]?.["x-ratelimit-reset"] ?? "300"
@@ -244,19 +244,12 @@ const useFeed = (params?: Params) => {
   };
 
   const feed = useInfiniteQuery(key, fetchFeed, {
-    enabled: isLoaded && ready && key?.[0] == "feed" && !!domain,
-    refetchOnWindowFocus:
-      (true && context?.refreshOnFocus) ?? true ? true : false,
+    enabled: ready && key?.[0] == "feed" && !!domain,
+    refetchOnWindowFocus: context?.refreshOnFocus ?? true,
     refetchOnMount: false,
     staleTime: 0,
     cacheTime: Infinity,
-    refetchInterval: true
-      ? Infinity
-      : context?.autoRefreshFeed
-      ? sort === "new" || sort === "rising"
-        ? context?.fastRefreshInterval ?? 10 * 1000
-        : context?.slowRefreshInterval ?? 30 * 60 * 1000
-      : Infinity,
+    refetchInterval: Infinity,
     getNextPageParam: (lastPage) => {
       //console.log('lastPage?ß', lastPage)
       if (lastPage.after || lastPage.after === "") {

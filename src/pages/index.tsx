@@ -65,7 +65,6 @@ export async function getStaticProps({ params }) {
 
   // const data = await loadFront({
   //   sort: "hot",
-  //   isPremium: true,
   // });
 
   return {

@@ -669,8 +669,7 @@ export const MySubsProvider = ({ children }) => {
       }
     };
 
-    if (true) {
-      if (router?.pathname === "/r/[...slug]" && router?.query?.slug?.[0]) {
+    if (router?.pathname === "/r/[...slug]" && router?.query?.slug?.[0]) {
         let loc = router?.query?.slug?.[0]
           .split(" ")
           .join("+")
@@ -715,7 +714,6 @@ export const MySubsProvider = ({ children }) => {
         setCurrSubs([]);
         setCurrLocation("");
         setCurrSubInfo({});
-      }
     }
 
     return () => {
@@ -723,12 +721,11 @@ export const MySubsProvider = ({ children }) => {
       setCurrSubInfo({});
       setCurrSubs([]);
     };
-  }, [router?.query?.slug?.[0], router.route, true]);
+  }, [router?.query?.slug?.[0], router.route]);
 
   //removing loadallfast from initial page load. Only loadall when needed
   useEffect(() => {
     if (
-      true &&
       status !== "loading" &&
       !loadedSubs &&
       (router?.pathname === "/r/[...slug]" ||
@@ -741,12 +738,9 @@ export const MySubsProvider = ({ children }) => {
     router?.pathname,
     status,
     loadedSubs,
-    true,
-    true,
   ]);
   useEffect(() => {
     if (
-      true &&
       router?.pathname === "/r/[...slug]" &&
       router?.query?.slug?.[1] !== "comments" &&
       !loadedSubs
@@ -756,28 +750,23 @@ export const MySubsProvider = ({ children }) => {
   }, [
     router,
     loadedSubs,
-    true,
-    true,
-    true,
   ]);
   const tryLoadAll = () => {
-    true && !loadedSubs && !loadingSubs && loadAllFast();
+    !loadedSubs && !loadingSubs && loadAllFast();
   };
 
   useEffect(() => {
-    true && status === "unauthenticated" && loadLocalSubs();
+    status === "unauthenticated" && loadLocalSubs();
     return () => {};
-  }, [true, status, context.localSubs, context.localFavoriteSubs]);
+  }, [status, context.localSubs, context.localFavoriteSubs]);
 
   useEffect(() => {
-    if (true) {
-      if (session && mySubs.length == 0) {
-        tryLoadAll();
-      } else if (!session && !loading) {
-        loadLocalSubs();
-      }
+    if (session && mySubs.length == 0) {
+      tryLoadAll();
+    } else if (!session && !loading) {
+      loadLocalSubs();
     }
-  }, [session, loading, true, true]);
+  }, [session, loading]);
 
   useEffect(() => {
     mySubs.forEach((sub) => {
@@ -811,10 +800,10 @@ export const MySubsProvider = ({ children }) => {
     }
   };
   useEffect(() => {
-    if (true && !session && !loading && myLocalSubs.length > 0) {
+    if (!session && !loading && myLocalSubs.length > 0) {
       setloadedSubs(true);
     }
-  }, [myLocalSubs, session, loading, true]);
+  }, [myLocalSubs, session, loading]);
 
   const loadUserSubInfos = async (users) => {
     let follows = [];

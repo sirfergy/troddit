@@ -170,12 +170,7 @@ const useThread = (permalink, sort, initialData?, withContext = false) => {
 
       return { post, comments };
     } catch (err) {
-      if (err?.message === "PREMIUM REQUIRED") {
-        // context.setPremiumModal(true);
-        return { post: undefined, comments: [] };
-      } else {
-        throw err;
-      }
+      throw err;
     }
   };
 

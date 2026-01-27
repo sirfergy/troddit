@@ -100,7 +100,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
         setUpdated(true);
       }
     }, 600),
-    [true, context?.token, context?.nsfw]
+    [context?.token, context?.nsfw]
   );
 
   const onSuggestionsFetchRequested = async ({ value }) => {
@@ -130,9 +130,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
   ];
   const extractFields = (query) => {};
   const getSuggestions = async (value) => {
-    //true
-    if (true) {
-      let search = {
+    let search = {
         kind: "search",
         data: {
           restrict_sr: false,
@@ -194,9 +192,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
           // return {};
         }
       }
-    }
 
-    // }
     return [];
   };
 
