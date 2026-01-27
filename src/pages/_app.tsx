@@ -1,12 +1,7 @@
 import "../../styles/globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 
-import {
-  PremiumAuthContextProvider,
-  PremiumAuthContextFreeProvider,
-} from "../PremiumAuthContext";
 import { MainProvider, localSeen } from "../MainContext";
 import { MySubsProvider } from "../MySubs";
 import { MyCollectionsProvider } from "../components/collections/CollectionContext";
@@ -24,12 +19,7 @@ import packageInfo from "../../package.json";
 import { checkVersion } from "../../lib/utils";
 import ToastCustom from "../components/toast/ToastCustom";
 import { usePlausible } from "next-plausible";
-import PremiumModal from "../components/PremiumModal";
 import RateLimitModal from "../components/RateLimitModal";
-
-const NO_AUTH_FREE_ACCESS = JSON.parse(
-  process?.env?.NEXT_PUBLIC_FREE_ACCESS ?? "true"
-);
 
 const VERSION = packageInfo.version;
 const queryClient = new QueryClient();
@@ -44,7 +34,6 @@ const App = ({ Component, pageProps }) => {
               <QueryClientProvider client={queryClient}>
                 <NavBar />
                 <Component {...pageProps} />
-                <PremiumModal />
                 <RateLimitModal />
                 <Toaster position="bottom-center" />
                 <Analytics />
@@ -92,19 +81,7 @@ function MyApp({ Component, pageProps }) {
         <link rel="shortcut icon" href="/favicon.ico" />
       </Head>
 
-      {NO_AUTH_FREE_ACCESS ? (
-        <PremiumAuthContextFreeProvider>
-          <App Component={Component} pageProps={pageProps} />
-        </PremiumAuthContextFreeProvider>
-      ) : (
-        <>
-          <ClerkProvider {...pageProps}>
-            <PremiumAuthContextProvider>
-              <App Component={Component} pageProps={pageProps} />
-            </PremiumAuthContextProvider>
-          </ClerkProvider>
-        </>
-      )}
+      <App Component={Component} pageProps={pageProps} />
     </>
   );
 }

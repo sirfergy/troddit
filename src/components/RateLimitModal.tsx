@@ -1,11 +1,8 @@
 import { Dialog } from "@headlessui/react";
-import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { BiCommentError } from "react-icons/bi";
-import { MdErrorOutline } from "react-icons/md";
 import { useMainContext } from "../MainContext";
 import Modal from "./ui/Modal";
-import { useTAuth } from "../PremiumAuthContext";
 import { useSession, signIn } from "next-auth/react";
 
 const CountDown = ({ timeout, start }: { timeout: number; start: Date }) => {
@@ -29,11 +26,10 @@ const CountDown = ({ timeout, start }: { timeout: number; start: Date }) => {
   return <>{remaining}</>;
 };
 
-const PremiumModal = () => {
+const RateLimitModal = () => {
   const [open, setOpen] = useState(0);
   const context: any = useMainContext();
   const { status: sessionStatus } = useSession();
-  const { isLoaded, premium } = useTAuth();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (context.rateLimitModal?.show) {
@@ -81,42 +77,26 @@ const PremiumModal = () => {
                   )}
                   <br />
                   <br />
-                  {premium?.isPremium !== true
-                    ? "Sign up to become a troddit+ member for elevated access."
-                    : sessionStatus === "unauthenticated" &&
-                      "Signing in with Reddit may grant greater limits. "}
+                  {sessionStatus === "unauthenticated" &&
+                    "Signing in with Reddit may grant greater limits. "}
                 </p>
               </div>
             </div>
           </div>
         </div>
         <div className="px-4 py-3 bg-th-background2 sm:px-6 sm:flex sm:flex-row-reverse">
-          {premium?.isPremium !== true ? (
-            <Link
-              href={"/sign-up"}
-              aria-label="sign in"
+          {sessionStatus === "unauthenticated" && (
+            <button
+              aria-label="close"
               type="button"
-              className="inline-flex justify-center w-full px-4 py-2 text-base font-medium border border-transparent rounded-md shadow-sm bg-th-accent hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-th-accent sm:ml-3 sm:w-auto sm:text-sm"
+              className="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium border border-transparent rounded-md shadow-sm bg-th-accent hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-th-accent sm:ml-3 sm:w-auto sm:text-sm sm:mt-0"
               onClick={() => {
                 context.setRateLimitModal((r) => ({ ...r, show: false }));
+                signIn("reddit");
               }}
             >
-              Sign Up
-            </Link>
-          ) : (
-            sessionStatus === "unauthenticated" && (
-              <button
-                aria-label="close"
-                type="button"
-                className="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium border border-transparent rounded-md shadow-sm bg-th-accent hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-th-accent sm:ml-3 sm:w-auto sm:text-sm sm:mt-0"
-                onClick={() => {
-                  context.setRateLimitModal((r) => ({ ...r, show: false }));
-                  signIn("reddit");
-                }}
-              >
-                Sign In
-              </button>
-            )
+              Sign In
+            </button>
           )}
 
           <button
@@ -136,4 +116,4 @@ const PremiumModal = () => {
   );
 };
 
-export default PremiumModal;
+export default RateLimitModal;

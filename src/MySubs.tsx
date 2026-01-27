@@ -19,7 +19,6 @@ import { useRouter } from "next/dist/client/router";
 import toast from "react-hot-toast";
 
 import ToastCustom from "./components/toast/ToastCustom";
-import { useTAuth } from "./PremiumAuthContext";
 
 export const SubsContext: any = React.createContext({});
 export const useSubsContext = () => {
@@ -28,7 +27,6 @@ export const useSubsContext = () => {
 
 export const MySubsProvider = ({ children }) => {
   const router = useRouter();
-  const user = useTAuth();
   const context: any = useMainContext();
   const [mySubs, setMySubs] = useState([]);
   const [myFollowing, setMyFollowing] = useState([]);
@@ -391,7 +389,6 @@ export const MySubsProvider = ({ children }) => {
         display_name: multiname,
         srnames: subreddits,
         user: username,
-        isPremium: user.premium?.isPremium,
       });
       if (res?.ok) {
         loadAllMultis();
@@ -447,7 +444,6 @@ export const MySubsProvider = ({ children }) => {
       multi: multi,
       srname: subname,
       user: username,
-      isPremium: user.premium?.isPremium,
     });
     //console.log(res);
     if (res?.ok) {
@@ -490,7 +486,6 @@ export const MySubsProvider = ({ children }) => {
       multi: multi,
       user: username,
       srname: subname,
-      isPremium: user.premium?.isPremium,
     });
     //console.log(res);
     if (res?.ok) {
@@ -528,7 +523,6 @@ export const MySubsProvider = ({ children }) => {
     let res = await deleteMulti({
       multiname: multi,
       username: username,
-      isPremium: user.premium?.isPremium,
     });
     //console.log(res);
     if (res?.ok) {
@@ -666,7 +660,6 @@ export const MySubsProvider = ({ children }) => {
       let info = await loadSubredditInfo({
         query: sub,
         loadUser: isUser,
-        isPremium: user.premium?.isPremium,
       });
       if (info) {
         addToSubCache(info);
@@ -676,7 +669,7 @@ export const MySubsProvider = ({ children }) => {
       }
     };
 
-    if (user.isLoaded) {
+    if (true) {
       if (router?.pathname === "/r/[...slug]" && router?.query?.slug?.[0]) {
         let loc = router?.query?.slug?.[0]
           .split(" ")
@@ -730,12 +723,12 @@ export const MySubsProvider = ({ children }) => {
       setCurrSubInfo({});
       setCurrSubs([]);
     };
-  }, [router?.query?.slug?.[0], router.route, user.isLoaded]);
+  }, [router?.query?.slug?.[0], router.route, true]);
 
   //removing loadallfast from initial page load. Only loadall when needed
   useEffect(() => {
     if (
-      user.isLoaded &&
+      true &&
       status !== "loading" &&
       !loadedSubs &&
       (router?.pathname === "/r/[...slug]" ||
@@ -748,12 +741,12 @@ export const MySubsProvider = ({ children }) => {
     router?.pathname,
     status,
     loadedSubs,
-    user.isLoaded,
-    user.premium?.isPremium,
+    true,
+    true,
   ]);
   useEffect(() => {
     if (
-      user.isLoaded &&
+      true &&
       router?.pathname === "/r/[...slug]" &&
       router?.query?.slug?.[1] !== "comments" &&
       !loadedSubs
@@ -763,28 +756,28 @@ export const MySubsProvider = ({ children }) => {
   }, [
     router,
     loadedSubs,
-    user?.isLoaded,
-    user.premium?.isPremium,
-    user.isLoaded,
+    true,
+    true,
+    true,
   ]);
   const tryLoadAll = () => {
-    user?.premium?.isPremium && !loadedSubs && !loadingSubs && loadAllFast();
+    true && !loadedSubs && !loadingSubs && loadAllFast();
   };
 
   useEffect(() => {
-    user.isLoaded && status === "unauthenticated" && loadLocalSubs();
+    true && status === "unauthenticated" && loadLocalSubs();
     return () => {};
-  }, [user.isLoaded, status, context.localSubs, context.localFavoriteSubs]);
+  }, [true, status, context.localSubs, context.localFavoriteSubs]);
 
   useEffect(() => {
-    if (user.isLoaded) {
+    if (true) {
       if (session && mySubs.length == 0) {
         tryLoadAll();
       } else if (!session && !loading) {
         loadLocalSubs();
       }
     }
-  }, [session, loading, user.isLoaded, user?.premium?.isPremium]);
+  }, [session, loading, true, true]);
 
   useEffect(() => {
     mySubs.forEach((sub) => {
@@ -818,10 +811,10 @@ export const MySubsProvider = ({ children }) => {
     }
   };
   useEffect(() => {
-    if (user.isLoaded && !session && !loading && myLocalSubs.length > 0) {
+    if (true && !session && !loading && myLocalSubs.length > 0) {
       setloadedSubs(true);
     }
-  }, [myLocalSubs, session, loading, user.isLoaded]);
+  }, [myLocalSubs, session, loading, true]);
 
   const loadUserSubInfos = async (users) => {
     let follows = [];
@@ -829,7 +822,6 @@ export const MySubsProvider = ({ children }) => {
       ...users.map(async (user) => {
         const info = await loadSubInfo({
           subreddit: user?.data?.subreddit?.display_name,
-          isPremium: user?.premium?.isPremium,
         });
         info?.kind == "t5"
           ? follows.push({
@@ -855,8 +847,8 @@ export const MySubsProvider = ({ children }) => {
   const loadAllFromReddit = async () => {
     try {
       setLoadingSubs(true);
-      const multis = getMyMultis({ isPremium: user.premium?.isPremium });
-      const all = getAllMyFollows({ isPremium: user.premium?.isPremium });
+      const multis = getMyMultis();
+      const all = getAllMyFollows();
       let loadedMultis = await multis;
       setMyMultis(loadedMultis);
       setloadedMultis(true);
@@ -889,7 +881,7 @@ export const MySubsProvider = ({ children }) => {
   };
 
   const loadAllFast = async () => {
-    if (session?.user?.name && user?.premium?.isPremium) {
+    if (session?.user?.name && true) {
       setLoadingSubs(true);
       let username = session.user.name;
       let d = await localForage.getItem("subSync");
@@ -924,7 +916,7 @@ export const MySubsProvider = ({ children }) => {
 
   const loadAllMultis = async () => {
     try {
-      const multis = await getMyMultis({ isPremium: user.premium?.isPremium });
+      const multis = await getMyMultis();
       if (multis) {
         setMyMultis(multis);
         setloadedMultis(true);
@@ -940,9 +932,7 @@ export const MySubsProvider = ({ children }) => {
       try {
         //console.log('loadallsubs')
         setloadedSubs(false);
-        let data = await getAllMyFollows({
-          isPremium: user.premium?.isPremium,
-        });
+        let data = await getAllMyFollows();
         setMySubs(data.subs);
         await loadUserSubInfos(data.users);
         //setMyFollowing(data.users);
@@ -1029,7 +1019,6 @@ export const MySubsProvider = ({ children }) => {
       const res = await favoriteSub({
         favorite: makeFavorite,
         name: subname,
-        isPremium: user.premium?.isPremium,
       });
       if (!res) {
         isUser ? setMyFollowing(pState) : setMySubs(pState);
@@ -1128,18 +1117,16 @@ export const MySubsProvider = ({ children }) => {
     );
     if (session || loggedIn) {
       let sub = subname;
-      const { isPremium } = user.premium;
       // let cachedInfo: any = await checkSubCache(sub);
       // if (cachedInfo) {
       //   sub = cachedInfo?.data?.name;
       // } else {
       if (isUser) sub = sub.substring(2);
-      let subInfo = await loadSubInfo({ subreddit: isUser ? `u_${sub}` : sub, isPremium });
+      let subInfo = await loadSubInfo({ subreddit: isUser ? `u_${sub}` : sub });
       if (isUser) {
         let aboutUser = await loadSubredditInfo({
           query: sub,
           loadUser: isUser,
-          isPremium,
         });
         aboutUser["data"]["subreddit"] = subInfo.data;
         subInfo = aboutUser;
@@ -1151,7 +1138,6 @@ export const MySubsProvider = ({ children }) => {
       let status = await subToSub({
         action: action,
         name: sub,
-        isPremium: user.premium?.isPremium,
       });
       if (status) {
         //loadAllSubs(loggedIn);

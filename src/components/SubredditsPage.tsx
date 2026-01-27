@@ -13,10 +13,8 @@ import MyMultiCollections from "./collections/MyMultiCollections";
 import SelectedSubs from "./collections/SelectedSubs";
 import { MyCollectionsProvider } from "./collections/CollectionContext";
 import { IoMdRefresh } from "react-icons/io";
-import { useTAuth } from "../PremiumAuthContext";
 
 const SubredditsPage = ({ query = undefined as any }) => {
-  const { isLoaded, premium } = useTAuth();
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const [waiting, setWaiting] = useState(false);
@@ -109,7 +107,6 @@ const SubredditsPage = ({ query = undefined as any }) => {
         let s = await loadSubredditInfo({
           query: name,
           loadUser: isUser,
-          isPremium: premium?.isPremium,
         });
 
         //handle if sub is banned..
@@ -134,24 +131,22 @@ const SubredditsPage = ({ query = undefined as any }) => {
           : setLocalSubsInfo((p) => ({ ...p, ...{ [sub?.data?.name]: s } }));
       }
     };
-    if (isLoaded) {
-      if (!session && !loading && selectedIndex === 0) {
-        if (myLocalSubsFiltered.length > 0) {
-          myLocalSubs.forEach((sub) => {
-            fetchSubInfo(sub);
-          });
-        } else {
-          setLoadingLocalSubs(false);
-        }
+    if (!session && !loading && selectedIndex === 0) {
+      if (myLocalSubsFiltered.length > 0) {
+        myLocalSubs.forEach((sub) => {
+          fetchSubInfo(sub);
+        });
+      } else {
+        setLoadingLocalSubs(false);
       }
-      if (!session && !loading && selectedIndex === 1) {
-        if (myLocalFollows.length > 0) {
-          myLocalFollows.forEach((sub) => {
-            fetchSubInfo(sub);
-          });
-        } else {
-          setLoadingLocalFollows(false);
-        }
+    }
+    if (!session && !loading && selectedIndex === 1) {
+      if (myLocalFollows.length > 0) {
+        myLocalFollows.forEach((sub) => {
+          fetchSubInfo(sub);
+        });
+      } else {
+        setLoadingLocalFollows(false);
       }
     }
   }, [
@@ -160,8 +155,6 @@ const SubredditsPage = ({ query = undefined as any }) => {
     session,
     loading,
     selectedIndex,
-    isLoaded,
-    premium?.isPremium,
   ]);
 
   useEffect(() => {
@@ -194,7 +187,6 @@ const SubredditsPage = ({ query = undefined as any }) => {
       let data = await getSubreddits({
         after: after,
         type: type,
-        isPremium: premium?.isPremium,
       });
       if (type === "popular") {
         data?.children && setSubreddits((p) => [...p, ...data?.children]);
@@ -206,15 +198,11 @@ const SubredditsPage = ({ query = undefined as any }) => {
       setWaiting(false);
       return data;
     } catch (err) {
-      if (err?.message === "PREMIUM REQUIRED") {
-        context.setPremiumModal(true);
-      } else {
-        throw err;
-      }
+      throw err;
     }
   };
   useEffect(() => {
-    isLoaded && fetchSubreddits();
+    fetchSubreddits();
     //fetchSubreddits("", "new");
 
     return () => {
@@ -227,7 +215,7 @@ const SubredditsPage = ({ query = undefined as any }) => {
       setLoadingLocalSubs(true);
       setLoadingLocalFollows(true);
     };
-  }, [isLoaded]);
+  }, []);
 
   return (
     <>

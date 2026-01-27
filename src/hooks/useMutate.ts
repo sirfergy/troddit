@@ -12,12 +12,10 @@ import {
   postVote,
   saveLink,
 } from "../RedditAPI";
-import { useTAuth } from "../PremiumAuthContext";
 
 const useMutate = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const {premium} = useTAuth(); 
   const { data: session, status } = useSession();
 
   interface Change {
@@ -63,7 +61,7 @@ const useMutate = () => {
   };
 
   const voteMutation = useMutation(
-    ({ vote, id, increment }: any) => postVote({dir: vote, id: id, isPremium: premium?.isPremium}),
+    ({ vote, id, increment }: any) => postVote({dir: vote, id: id}),
     {
       onMutate: async (update) => {
         if (update.id.substring(0, 3) === "t3_") {
@@ -155,7 +153,7 @@ const useMutate = () => {
   );
 
   const saveMutation = useMutation(
-    ({ id, isSaved }: any) => saveLink({id, isSaved, category: "", isPremium: premium?.isPremium}),
+    ({ id, isSaved }: any) => saveLink({id, isSaved, category: ""}),
     {
       onMutate: async (update) => {
         if (update.id.substring(0, 3) === "t3_") {
@@ -188,7 +186,7 @@ const useMutate = () => {
   );
 
   const hideMutation = useMutation(
-    ({ id, isHidden }: any) => hideLink({id, isHidden, isPremium: premium?.isPremium}),
+    ({ id, isHidden }: any) => hideLink({id, isHidden}),
     {
       onMutate: async (update) => {
         return optimisticUpdate(["feed"], update.id, {
@@ -216,7 +214,7 @@ const useMutate = () => {
   );
 
   const postCommentMutation = useMutation(
-    ({ parent, textValue, postName }: any) => postComment({parent, text: textValue, isPremium: premium?.isPremium}),
+    ({ parent, textValue, postName }: any) => postComment({parent, text: textValue}),
     {
       onSuccess: (data: any) => {
         if (session?.user?.name) {
@@ -342,7 +340,7 @@ const useMutate = () => {
 
   const editCommentMutation = useMutation(
     ({ parent, text }: { parent: string; text: string }) =>
-      editUserText({id: parent, text: text, isPremium: premium?.isPremium}),
+      editUserText({id: parent, text: text}),
     {
       onSuccess: (data) => {
         //console.log("success:", data, data.permalink.split("/")?.[4]);
@@ -444,7 +442,7 @@ const useMutate = () => {
   );
 
   const commentDelete = useMutation(
-    ({ name, thread }: { name: string; thread: string }) => deleteLink({id: name, isPremium: premium?.isPremium}),
+    ({ name, thread }: { name: string; thread: string }) => deleteLink({id: name}),
     {
       onMutate: async (update) => {
         queryClient.setQueriesData(
@@ -483,8 +481,7 @@ const useMutate = () => {
         link_id: link_id, 
         permalink: permalink, 
         loggedIn: !!session, 
-        token, 
-        isPremium: premium?.isPremium
+        token
       }
     );
     //   childrenstring,

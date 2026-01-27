@@ -1,6 +1,5 @@
 import localForage from "localforage";
 import React, { useState, useContext, useEffect, useReducer } from "react";
-import { useTAuth } from "./PremiumAuthContext";
 
 export const localRead = localForage.createInstance({ storeName: "readPosts" });
 export const localSeen = localForage.createInstance({ storeName: "seenPosts" });
@@ -22,8 +21,6 @@ export const useMainContext = () => {
 };
 
 export const MainProvider = ({ children }) => {
-  const { premium } = useTAuth();
-
   const [pauseAll, setPauseAll] = useState(false); //pauses all media when a post is opened
   const [loading, setLoading] = useState(false); //used in feed to display load bar
   const [ready, setReady] = useState(false); //prevents any feed load until settings are loaded
@@ -32,7 +29,6 @@ export const MainProvider = ({ children }) => {
   const [uniformHeights, setUniformHeights] = useState<boolean>();
   const [highRes, setHighRes] = useState(false);
   const [loginModal, setLoginModal] = useState(false);
-  const [premiumModal, setPremiumModal] = useState(false);
   const [rateLimitModal, setRateLimitModal] = useState({
     show: false,
     timeout: 0,
@@ -553,11 +549,9 @@ export const MainProvider = ({ children }) => {
   };
   const toggleLoginModal = (forceOn?: boolean) => {
     if (forceOn) {
-      premium?.isPremium ? setLoginModal(true) : setPremiumModal(true);
+      setLoginModal(true);
     } else {
-      premium?.isPremium
-        ? setLoginModal((m) => !m)
-        : setPremiumModal((m) => !m);
+      setLoginModal((m) => !m);
     }
   };
 
@@ -1537,8 +1531,6 @@ export const MainProvider = ({ children }) => {
         toggleNSFW,
         loginModal,
         toggleLoginModal,
-        premiumModal,
-        setPremiumModal,
         rateLimitModal,
         setRateLimitModal,
         setLoginModal,

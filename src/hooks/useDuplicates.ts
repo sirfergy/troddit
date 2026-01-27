@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import {useTAuth} from "../PremiumAuthContext"; 
 import { useMainContext } from "../MainContext";
 import { useSession } from "next-auth/react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +6,6 @@ import { findDuplicates } from "../RedditAPI";
 import { findMediaInfo } from "../../lib/utils";
 
 const useDuplicates = ({ enabled, permalink }) => {
-  const {premium} = useTAuth(); 
   const { data: session, status } = useSession();
   const context: any = useMainContext();
   const loading = status === "loading";
@@ -23,8 +21,7 @@ const useDuplicates = ({ enabled, permalink }) => {
       after: feedParams.after, 
       count: feedParams.count, 
       loggedIn: feedParams.loggedIn, 
-      token: context.token, 
-      isPremium: premium?.isPremium
+      token: context.token
     }); 
     const data = res?.res?.[1]?.data;
     const totalDuplicates =

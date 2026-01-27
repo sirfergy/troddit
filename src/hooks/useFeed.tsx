@@ -12,7 +12,6 @@ import {
   loadUserSelf,
 } from "../RedditAPI";
 import useLocation from "./useLocation";
-import { useTAuth } from "../PremiumAuthContext";
 import { toast } from "react-hot-toast";
 
 interface Params {
@@ -21,7 +20,6 @@ interface Params {
 
 const useFeed = (params?: Params) => {
   const { data: session, status } = useSession();
-  const { isLoaded, premium } = useTAuth();
   const sessloading = status === "loading";
   const context: any = useMainContext();
 
@@ -88,7 +86,6 @@ const useFeed = (params?: Params) => {
           localSubs: context?.localSubs, //home feed is invalidated on subs change
           token: context?.token,
           loggedIn: feedParams.loggedIn,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "SUBREDDIT") {
         data = await loadSubreddits({
@@ -100,7 +97,6 @@ const useFeed = (params?: Params) => {
           token: context?.token,
           loggedIn: feedParams.loggedIn,
           sr_detail: true,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "FLAIR") {
         data = await getRedditSearch({
@@ -113,7 +109,6 @@ const useFeed = (params?: Params) => {
           subreddit: feedParams.subreddits,
           token: context?.token,
           loggedIn: feedParams.loggedIn,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "SEARCH") {
         data = await getRedditSearch({
@@ -126,7 +121,6 @@ const useFeed = (params?: Params) => {
           subreddit: undefined,
           token: context?.token,
           loggedIn: feedParams.loggedIn,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "MULTI") {
         data = await getUserMultiPosts({
@@ -135,7 +129,6 @@ const useFeed = (params?: Params) => {
           sort: feedParams.sort,
           multiname: feedParams.userMode,
           user: feedParams.subreddits,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "SELF") {
         data = await loadUserSelf({
@@ -148,7 +141,6 @@ const useFeed = (params?: Params) => {
           where: feedParams.userMode?.toLowerCase(),
           token: context?.token,
           loggedIn: feedParams.loggedIn,
-          isPremium: premium?.isPremium,
         });
       } else if (mode === "USER") {
         data = await loadUserPosts({
@@ -158,21 +150,11 @@ const useFeed = (params?: Params) => {
           sort: feedParams.sort,
           username: feedParams.subreddits as string,
           type: feedParams.userMode,
-          isPremium: premium?.isPremium,
         });
       }
       
     } catch (error) {
-      if (error?.message === "PREMIUM REQUIRED") {
-        context.setPremiumModal(true);
-        return {
-          filtered: [],
-          after: null,
-          count: feedParams.count,
-          prevPosts: feedParams.prevPosts,
-          filterCount: 0,
-        };
-      } else if (error?.["response"]?.["status"] === 429 || true) {
+      if (error?.["response"]?.["status"] === 429 || true) {
         //rate limited
         const timeout = parseInt(
           error?.["response"]?.["headers"]?.["x-ratelimit-reset"] ?? "300"
@@ -264,11 +246,11 @@ const useFeed = (params?: Params) => {
   const feed = useInfiniteQuery(key, fetchFeed, {
     enabled: isLoaded && ready && key?.[0] == "feed" && !!domain,
     refetchOnWindowFocus:
-      (premium?.isPremium && context?.refreshOnFocus) ?? true ? true : false,
+      (true && context?.refreshOnFocus) ?? true ? true : false,
     refetchOnMount: false,
     staleTime: 0,
     cacheTime: Infinity,
-    refetchInterval: premium?.isPremium
+    refetchInterval: true
       ? Infinity
       : context?.autoRefreshFeed
       ? sort === "new" || sort === "rising"

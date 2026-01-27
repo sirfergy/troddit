@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMainContext } from "../MainContext";
 import Toggles from "./settings/Toggles";
 import { useWindowWidth } from "@react-hook/window-size/throttled";
-import { useTAuth } from "../PremiumAuthContext";
+import { useSession, signOut } from "next-auth/react";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -15,8 +15,8 @@ const subOptionStyle =
   "px-4 py-3 text-sm hover:bg-th-highlight  cursor-pointer";
 
 const NavMenu = ({ hide = false }) => {
-  const {isSignedIn, signOut} = useTAuth(); 
   const context: any = useMainContext();
+  const { data: session } = useSession();
   const [touched, setTouched] = useState(false);
   const windowWidth = useWindowWidth(); 
   //need to reset wideUI so multi-column (narrow UI doesn't make sense with >1 column) displays properly.
@@ -431,7 +431,7 @@ const NavMenu = ({ hide = false }) => {
                 </div>
               )}
             </Menu.Item>
-            <Menu.Item disabled={!isSignedIn}>
+            <Menu.Item disabled={!session}>
               {({ disabled, active }) => (
                 <button
                   className={classNames(

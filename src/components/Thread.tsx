@@ -52,7 +52,6 @@ import MiniCard from "./cards/MiniCard";
 import { CgSpinnerTwo } from "react-icons/cg";
 import { MdOutlineCompress, MdOutlineExpand } from "react-icons/md";
 import PostBody from "./PostBody";
-import { useTAuth } from "../PremiumAuthContext";
 import LoaderPuff from "./ui/LoaderPuff";
 
 const SIDEBYSIDE_THRESHOLD = 1000;
@@ -74,7 +73,6 @@ const Thread = ({
 }) => {
   const context: any = useMainContext();
   sort ??= context.defaultCommentSort;
-  const { premium } = useTAuth();
   const { data: session, status } = useSession();
   const { thread } = useThread(permalink, sort, undefined, withContext);
   const [showDuplicates, setShowDuplicates] = useState(() => duplicates);

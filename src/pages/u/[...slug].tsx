@@ -8,9 +8,8 @@ import { getUserMultiSubs } from "../../RedditAPI";
 import { getSession } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import React from "react";
-import { useTAuth } from "../../PremiumAuthContext";
+
 const Sort = ({ query }) => {
-  const {isLoaded, premium} = useTAuth(); 
   const router = useRouter();
   const { data: session, status } = useSession();
   const loading = status === "loading";
@@ -24,7 +23,7 @@ const Sort = ({ query }) => {
   const [feedQuery, setFeedQuery] = useState("");
 
   const getSubsArray = async () => {
-    let subs = await getUserMultiSubs({user:query?.slug?.[0], multi:query?.slug?.[2], isPremium: premium?.isPremium});
+    let subs = await getUserMultiSubs({user:query?.slug?.[0], multi:query?.slug?.[2]});
     // subs?.length > 0 ? setSubsArray(subs) : setSubsArray([]);
 
     subs && subs?.length > 0 && router.push(`/r/${subs.join("+")}`);
@@ -134,8 +133,7 @@ const Sort = ({ query }) => {
                   )}
                   {isMulti && session && (
                     <button
-                      disabled={!premium?.isPremium}
-                      className="flex justify-center w-full pb-2 hover:cursor-pointer hover:font-semibold disabled:opacity-50 disabled:pointer-events-none"
+                      className="flex justify-center w-full pb-2 hover:cursor-pointer hover:font-semibold"
                       onClick={getSubsArray}
                     >
                       Click to Extract Subreddits

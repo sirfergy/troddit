@@ -20,9 +20,8 @@ import useThread from "../../hooks/useThread";
 import { findMediaInfo } from "../../../lib/utils";
 import { getToken } from "next-auth/jwt";
 import { getSession } from "next-auth/react";
-import { useTAuth } from "../../PremiumAuthContext";
+
 const SubredditPage = ({ query, metaTags, post, postData }) => {
-  const user = useTAuth();
   const [subsArray, setSubsArray] = useState<string[]>([]);
   const [wikiContent, setWikiContent] = useState("");
   const [wikiMode, setWikiMode] = useState(false);
@@ -30,33 +29,31 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
   const [postThread, setPostThread] = useState(false);
   const [withCommentContext, setWithCommentContext] = useState(false);
   useEffect(() => {
-    const getWiki = async (wikiquery: {wikiquery:string[];isPremium:boolean}) => {
+    const getWiki = async (wikiquery: {wikiquery:string[]}) => {
       const data = await getWikiContent(wikiquery);
       setWikiContent(data?.data?.content_html ?? "nothing found");
     };
 
-    if (user.isLoaded) {
-      setSubsArray(
-        query?.slug?.[0]
-          .split(" ")
-          .join("+")
-          .split(",")
-          .join("+")
-          .split("%20")
-          .join("+")
-          .split("+")
-      );
-      if (query?.slug?.[1]?.toUpperCase() === "COMMENTS") {
-        setPostThread(true);
+    setSubsArray(
+      query?.slug?.[0]
+        .split(" ")
+        .join("+")
+        .split(",")
+        .join("+")
+        .split("%20")
+        .join("+")
+        .split("+")
+    );
+    if (query?.slug?.[1]?.toUpperCase() === "COMMENTS") {
+      setPostThread(true);
         query?.context && setWithCommentContext(true);
         query?.slug?.[4] && setCommentThread(true);
       } else if (query?.slug?.[1]?.toUpperCase() === "WIKI") {
         setWikiMode(true);
         let wikiquery = query.slug;
         if (!wikiquery?.[2]) wikiquery[2] = "index";
-        getWiki({wikiquery, isPremium: user.premium?.isPremium ?? false});
+        getWiki({wikiquery});
       }
-    }
 
     return () => {
       setPostThread(false);
@@ -65,7 +62,7 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
       setWikiMode(false);
       setSubsArray([]);
     };
-  }, [query, user.isLoaded, user.premium?.isPremium]);
+  }, [query]);
   return (
     <div
       className={

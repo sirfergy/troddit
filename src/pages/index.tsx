@@ -8,16 +8,14 @@ import { getToken } from "next-auth/jwt";
 import React from "react";
 import Card1 from "../components/cards/Card1";
 import Modal from "../components/ui/Modal";
-import { useTAuth } from "../PremiumAuthContext";
 
 const index = ({ postData, user }) => {
-  const { isLoaded, premium } = useTAuth();
   const [initialData, setInitialData] = useState({});
   const [ready, setReady] = useState(false);
   const data = useSession();
   const isloading = data.status === "loading";
   useEffect(() => {
-    if (!isloading && isLoaded && premium) {
+    if (!isloading) {
       const parseCookie = (str) =>
         str
           .split(";")
@@ -46,8 +44,6 @@ const index = ({ postData, user }) => {
   }, [
     postData,
     isloading,
-    isLoaded,
-    premium,
     user,
     data?.data?.user?.name,
   ]);
