@@ -9,9 +9,8 @@ import SubCard from "./cards/SubCard";
 import SubCardPlaceHolder from "./cards/SubCardPlaceHolder";
 import Checkbox from "./ui/Checkbox";
 import React from "react";
-import { useTAuth } from "../PremiumAuthContext";
+
 const SearchPage = ({ query }) => {
-  const { isLoaded, premium } = useTAuth();
   const router = useRouter();
   const context: any = useMainContext();
   const [loading, setLoading] = useState(true);
@@ -27,7 +26,6 @@ const SearchPage = ({ query }) => {
         after,
         include_over_18: safeSearch ? undefined : true,
         searchtype: router.query?.type === "user" ? "user" : "sr",
-        isPremium: premium?.isPremium ?? false,
       });
       if (subs?.children) {
         let filtered = subs?.children?.filter(
@@ -38,11 +36,7 @@ const SearchPage = ({ query }) => {
 
       setAfter(subs?.after);
     } catch (err) {
-      if (err?.message === "PREMIUM REQUIRED") {
-        context.setPremiumModal(true);
-      } else {
-        throw err;
-      }
+      throw err;
     }
   };
 
@@ -84,7 +78,6 @@ const SearchPage = ({ query }) => {
         after: "",
         include_over_18: safeSearch ? undefined : true,
         searchtype: router.query?.type === "user" ? "user" : "sr",
-        isPremium: premium?.isPremium ?? false,
       });
       //console.log(subs);
       if (subs?.children) {
@@ -98,9 +91,7 @@ const SearchPage = ({ query }) => {
 
       setLoading(false);
     };
-    if (isLoaded) {
-      getSearch();
-    }
+    getSearch();
     return () => {
       setSubs([]);
       setAfter("");
@@ -111,8 +102,6 @@ const SearchPage = ({ query }) => {
     safeSearch,
     router.query?.type,
     searchUsers,
-    isLoaded,
-    premium?.isPremium,
   ]);
   return (
     <div>

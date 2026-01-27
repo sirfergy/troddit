@@ -8,7 +8,6 @@ import { useSession, signIn } from "next-auth/react";
 import debounce from "lodash/debounce";
 import Image from "next/legacy/image";
 // import { usePlausible } from "next-plausible";
-import { useTAuth } from "../PremiumAuthContext";
 import {
   AiOutlinePlus,
   AiOutlineSearch,
@@ -20,7 +19,6 @@ import Checkbox from "./ui/Checkbox";
 import ItemsList from "./search/ItemsList";
 
 const Search = ({ id, setShowSearch = (a) => {} }) => {
-  const { isLoaded, premium } = useTAuth();
   const router = useRouter();
   const [error, seterror] = useState(false);
   const [value, setValue] = useState("");
@@ -102,7 +100,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
         setUpdated(true);
       }
     }, 600),
-    [premium?.isPremium, context?.token, context?.nsfw]
+    [context?.token, context?.nsfw]
   );
 
   const onSuggestionsFetchRequested = async ({ value }) => {
@@ -132,9 +130,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
   ];
   const extractFields = (query) => {};
   const getSuggestions = async (value) => {
-    //premium?.isPremium
-    if (true) {
-      let search = {
+    let search = {
         kind: "search",
         data: {
           restrict_sr: false,
@@ -161,7 +157,6 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
         over18: context.nsfw,
         loggedIn: !!session,
         token: context?.token,
-        isPremium: premium?.isPremium,
       });
       let data = res?.data;
       data?.token && context.setToken(data?.token);
@@ -197,9 +192,7 @@ const Search = ({ id, setShowSearch = (a) => {} }) => {
           // return {};
         }
       }
-    }
 
-    // }
     return [];
   };
 

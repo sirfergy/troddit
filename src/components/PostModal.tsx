@@ -109,17 +109,9 @@ const PostModal = ({
 
   //prevent scrolling on main body when open
   useEffect(() => {
-    if (true) {
-      const width = document.body.clientWidth;
-      document.documentElement.style.setProperty("--overflow", "hidden hidden");
-      document.body.style.width = `${width}px`;
-    } else {
-      document.documentElement.style.setProperty(
-        "--overflow",
-        "hidden visible"
-      );
-      document.body.style.width = `auto`;
-    }
+    const width = document.body.clientWidth;
+    document.documentElement.style.setProperty("--overflow", "hidden hidden");
+    document.body.style.width = `${width}px`;
 
     return () => {
       document.documentElement.style.setProperty(

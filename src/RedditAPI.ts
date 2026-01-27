@@ -11,7 +11,6 @@ let ratelimit_remaining = 600;
 const LOG_REQUESTS = JSON.parse(
   process?.env?.NEXT_PUBLIC_ENABLE_API_LOG ?? "false"
 );
-const FREE_ACCESS = JSON.parse(process?.env?.NEXT_PUBLIC_FREE_ACCESS ?? "true");
 const REDDIT = "https://www.reddit.com";
 
 export const logApiRequest = async (type: Route_Types, isOauth?: boolean) => {
@@ -46,19 +45,11 @@ const getToken = async () => {
   }
 };
 
-const checkAccess = (bypass?: boolean) => {
-  if (!bypass && !FREE_ACCESS) {
-    throw new Error("PREMIUM REQUIRED");
-  }
-};
-
 const oauthGet = async (
   accessToken: string,
-  isPremium: boolean,
   method: string,
   config: AxiosRequestConfig<any>
 ) => {
-  checkAccess(isPremium);
   const res = await axios.get(`https://oauth.reddit.com${method}`, {
     ...config,
     headers: {
@@ -196,9 +187,7 @@ type GenericListingPropType = {
   after?: string;
   count?: number;
 } & RedditSessionPropsType;
-type PremiumAccessPropType = {
-  isPremium?: boolean;
-};
+
 
 export const loadFront = async ({
   loggedIn = false,
@@ -208,10 +197,7 @@ export const loadFront = async ({
   after,
   count,
   localSubs,
-  skipCheck = false,
-  isPremium = false,
-}: GenericListingPropType &
-  PremiumAccessPropType & {
+  skipCheck = false,}: GenericListingPropType & {
     skipCheck?: boolean;
     localSubs?: string[];
   }) => {
@@ -223,7 +209,7 @@ export const loadFront = async ({
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
       logApiRequest("home", true);
-      const res1 = await oauthGet(accessToken, isPremium, `/${sort}`, {
+      const res1 = await oauthGet(accessToken, `/${sort}`, {
         headers: {
           authorization: `bearer ${accessToken}`,
         },
@@ -258,7 +244,6 @@ export const loadFront = async ({
         range,
         count,
         sr_detail: true,
-        isPremium,
       });
     } else {
       try {
@@ -296,10 +281,7 @@ export const loadSubreddits = async ({
   range,
   after = "",
   count = 0,
-  sr_detail = false,
-  isPremium,
-}: GenericListingPropType &
-  PremiumAccessPropType & { subreddits: string; sr_detail?: boolean }) => {
+  sr_detail = false,}: GenericListingPropType & { subreddits: string; sr_detail?: boolean }) => {
   let accessToken = token?.accessToken;
   let returnToken = token;
   if (
@@ -319,9 +301,7 @@ export const loadSubreddits = async ({
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
       logApiRequest("r/", true);
-      const res1 = await oauthGet(
-        accessToken,
-        isPremium,
+      const res1 = await oauthGet(accessToken,
         `/r/${subreddits}/${sort}`,
         {
           headers: {
@@ -383,10 +363,7 @@ export const getRedditSearch = async ({
   range,
   token,
   include_over_18,
-  searchtype,
-  isPremium,
-}: GenericListingPropType &
-  PremiumAccessPropType & {
+  searchtype,}: GenericListingPropType & {
     params: { q?: string; [x: string]: string | number | boolean };
     include_over_18?: boolean;
     subreddit?: string;
@@ -455,7 +432,7 @@ export const getRedditSearch = async ({
       let before = "";
       do {
         logApiRequest("search", true);
-        const res1 = await oauthGet(accessToken, isPremium, oathsearch, {
+        const res1 = await oauthGet(accessToken, oathsearch, {
           headers: {
             authorization: `bearer ${accessToken}`,
           },
@@ -518,9 +495,7 @@ export const loadSubFlairPosts = async ({
   flair,
   sort = "new",
   range = "",
-  after = "",
-  isPremium,
-}: PremiumAccessPropType & {
+  after = "",}: {
   subreddit: string;
   flair: string;
   sort?: string;
@@ -558,9 +533,7 @@ export const getUserMultiPosts = async ({
   multiname,
   sort = "hot",
   range,
-  after,
-  isPremium,
-}: PremiumAccessPropType & {
+  after,}: {
   user: string;
   multiname: string;
   sort?: string;
@@ -590,9 +563,7 @@ export const getUserMultiPosts = async ({
   }
 };
 export const loadSubFlairs = async ({
-  subreddit,
-  isPremium,
-}: PremiumAccessPropType & { subreddit: string }) => {
+  subreddit,}: { subreddit: string }) => {
   let token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -614,15 +585,13 @@ export const loadSubFlairs = async ({
 };
 //oauth request
 export const loadSubInfo = async ({
-  subreddit,
-  isPremium,
-}: PremiumAccessPropType & { subreddit: string }) => {
+  subreddit,}: { subreddit: string }) => {
   let token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
       logApiRequest("r/", true);
       const res = await (
-        await oauthGet(token, isPremium, `/r/${subreddit}/about`, {
+        await oauthGet(token, `/r/${subreddit}/about`, {
           headers: {
             authorization: `bearer ${token}`,
           },
@@ -639,9 +608,7 @@ export const loadSubInfo = async ({
 //search request no auth required
 export const loadSubredditInfo = async ({
   query,
-  loadUser = false,
-  isPremium,
-}: PremiumAccessPropType & {
+  loadUser = false,}: {
   query: string;
   loadUser?: boolean;
 }) => {
@@ -674,9 +641,7 @@ export const loadSubredditInfo = async ({
 };
 
 export const getWikiContent = async ({
-  wikiquery,
-  isPremium,
-}: PremiumAccessPropType & {
+  wikiquery,}: {
   wikiquery: string[];
 }) => {
   try {
@@ -695,13 +660,11 @@ export const getWikiContent = async ({
 
 export const favoriteSub = async ({
   favorite,
-  name,
-  isPremium,
-}: PremiumAccessPropType & {
+  name,}: {
   favorite: boolean;
   name: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -726,13 +689,11 @@ export const favoriteSub = async ({
 
 export const subToSub = async ({
   action,
-  name,
-  isPremium,
-}: PremiumAccessPropType & {
+  name,}: {
   action: string;
   name: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -771,19 +732,14 @@ export const loadUserPosts = async ({
   range,
   after = "",
   count = 0,
-  type,
-  isPremium,
-}: PremiumAccessPropType &
-  GenericListingPropType & { username: string; type?: string }) => {
+  type,}: GenericListingPropType & { username: string; type?: string }) => {
   let { returnToken, accessToken } = await checkToken(loggedIn, token);
   try {
     let res;
     if (loggedIn && accessToken) {
       logApiRequest("u/", true);
       res = await (
-        await oauthGet(
-          accessToken,
-          isPremium,
+        await oauthGet(accessToken,
           `/user/${username}/${type ? type.toLowerCase() : ""}?sort=${sort}`,
           {
             headers: {
@@ -840,10 +796,7 @@ export const loadUserSelf = async ({
   range,
   after = "",
   type = "links",
-  where,
-  isPremium,
-}: PremiumAccessPropType &
-  GenericListingPropType & {
+  where,}: GenericListingPropType & {
     username: string;
     where: string;
     type?: string;
@@ -861,9 +814,7 @@ export const loadUserSelf = async ({
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
       logApiRequest("u/", true);
-      const res = await oauthGet(
-        accessToken,
-        isPremium,
+      const res = await oauthGet(accessToken,
         `/user/${username}/${where}`,
         {
           headers: {
@@ -899,9 +850,7 @@ export const loadUserSelf = async ({
 
 export const getSubreddits = async ({
   after,
-  type = "popular",
-  isPremium,
-}: PremiumAccessPropType & {
+  type = "popular",}: {
   after?: string;
   type?: string;
 }) => {
@@ -921,9 +870,7 @@ export const getSubreddits = async ({
 
 export const getMySubs = async ({
   after,
-  count,
-  isPremium,
-}: PremiumAccessPropType & {
+  count,}: {
   after?: string;
   count?: boolean;
 }) => {
@@ -931,7 +878,7 @@ export const getMySubs = async ({
   if (token && ratelimit_remaining > 1) {
     try {
       logApiRequest("cud", true);
-      let res = await oauthGet(token, isPremium, "/subreddits/mine/subscriber", {
+      let res = await oauthGet(token, "/subreddits/mine/subscriber", {
         headers: {
           authorization: `bearer ${token}`,
         },
@@ -953,7 +900,7 @@ export const getMySubs = async ({
   return null;
 };
 
-export const getAllMyFollows = async ({ isPremium }: PremiumAccessPropType) => {
+export const getAllMyFollows = async () => {
   let alldata = [];
   let after = "";
   let count = 0;
@@ -963,9 +910,7 @@ export const getAllMyFollows = async ({ isPremium }: PremiumAccessPropType) => {
     if (token && ratelimit_remaining > 1) {
       try {
         logApiRequest("cud", true);
-        let res = await oauthGet(
-          token,
-          isPremium,
+        let res = await oauthGet(token,
           "/subreddits/mine/subscriber",
           {
             headers: {
@@ -1009,7 +954,6 @@ export const getAllMyFollows = async ({ isPremium }: PremiumAccessPropType) => {
       let d = await loadSubredditInfo({
         query: a?.data?.display_name?.substring(2),
         loadUser: true,
-        isPremium: isPremium,
       });
       d && users.push(d);
     } else {
@@ -1021,9 +965,7 @@ export const getAllMyFollows = async ({ isPremium }: PremiumAccessPropType) => {
 
 export const getUserMultiSubs = async ({
   user,
-  multi,
-  isPremium,
-}: PremiumAccessPropType & {
+  multi,}: {
   user: string;
   multi: string;
 }) => {
@@ -1031,9 +973,7 @@ export const getUserMultiSubs = async ({
   if (token && ratelimit_remaining > 1) {
     try {
       logApiRequest("cud", true);
-      const res = await oauthGet(
-        token,
-        isPremium,
+      const res = await oauthGet(token,
         `/api/multi/user/${user}/m/${multi}`,
         {
           headers: {
@@ -1054,13 +994,13 @@ export const getUserMultiSubs = async ({
   }
 };
 
-export const getMyMultis = async ({ isPremium }: PremiumAccessPropType) => {
+export const getMyMultis = async () => {
   const token = await (await getToken())?.accessToken;
   //console.log(token);
   if (token && ratelimit_remaining > 1) {
     try {
       logApiRequest("cud", true);
-      let res = await oauthGet(token, isPremium, "/api/multi/mine", {
+      let res = await oauthGet(token, "/api/multi/mine", {
         headers: {
           authorization: `bearer ${token}`,
         },
@@ -1080,14 +1020,12 @@ export const getMyMultis = async ({ isPremium }: PremiumAccessPropType) => {
 export const addToMulti = async ({
   multi,
   user,
-  srname,
-  isPremium,
-}: PremiumAccessPropType & {
+  srname,}: {
   multi: string;
   user: string;
   srname: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1112,14 +1050,12 @@ export const addToMulti = async ({
 export const deleteFromMulti = async ({
   multi,
   user,
-  srname,
-  isPremium,
-}: PremiumAccessPropType & {
+  srname,}: {
   multi: string;
   user: string;
   srname: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1147,9 +1083,7 @@ export const createMulti = async ({
   srnames,
   visibility = "private",
   description_md,
-  key_color,
-  isPremium,
-}: PremiumAccessPropType & {
+  key_color,}: {
   display_name: string;
   user: string;
   srnames: string[];
@@ -1157,7 +1091,7 @@ export const createMulti = async ({
   description_md?: string;
   key_color?: string;
 }) => {
-  checkAccess(isPremium);
+  
   // {
   //   "description_md": raw markdown text,
   //   "display_name": a string no longer than 50 characters,
@@ -1197,9 +1131,8 @@ export const createMulti = async ({
 export const deleteMulti = async ({
   multiname,
   username,
-  isPremium,
-}: { multiname: string; username: string } & PremiumAccessPropType) => {
-  checkAccess(isPremium);
+}: { multiname: string; username: string }) => {
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1224,9 +1157,7 @@ export const searchSubreddits = async ({
   query,
   over18 = false,
   loggedIn = false,
-  token,
-  isPremium,
-}: PremiumAccessPropType & {
+  token,}: {
   query: string;
   over18?: boolean;
 } & RedditSessionPropsType) => {
@@ -1242,9 +1173,7 @@ export const searchSubreddits = async ({
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
       logApiRequest("search", true);
-      let res = await oauthGet(
-        accessToken,
-        isPremium,
+      let res = await oauthGet(accessToken,
         "/api/subreddit_autocomplete_v2",
         {
           headers: {
@@ -1285,9 +1214,7 @@ export const searchSubreddits = async ({
 
 export const loadComments = async ({
   permalink,
-  sort = "top",
-  isPremium,
-}: PremiumAccessPropType & {
+  sort = "top",}: {
   permalink: string;
   sort?: string;
 }) => {
@@ -1316,9 +1243,7 @@ export const loadMoreComments = async ({
   token,
   sort = "top",
   depth,
-  id,
-  isPremium,
-}: PremiumAccessPropType & {
+  id,}: {
   children: string;
   link_id: string;
   permalink?: string;
@@ -1361,9 +1286,7 @@ export const loadPost = async ({
   loggedIn = false,
   token,
   withcontext,
-  withDetail = false,
-  isPremium,
-}: PremiumAccessPropType & {
+  withDetail = false,}: {
   permalink: string;
   sort?: string;
   withcontext?: boolean;
@@ -1396,7 +1319,7 @@ export const loadPost = async ({
 
     try {
       logApiRequest("thread", true);
-      let res = await oauthGet(accessToken, isPremium, path, {
+      let res = await oauthGet(accessToken, path, {
         headers: {
           authorization: `bearer ${accessToken}`,
         },
@@ -1452,8 +1375,8 @@ export const loadPost = async ({
   }
 };
 
-export const getMyID = async ({ isPremium }: PremiumAccessPropType) => {
-  checkAccess(isPremium);
+export const getMyID = async () => {
+  
   const token = await (await getToken())?.accessToken;
   try {
     logApiRequest("cud", true);
@@ -1470,14 +1393,12 @@ export const getMyID = async ({ isPremium }: PremiumAccessPropType) => {
 export const saveLink = async ({
   category,
   id,
-  isSaved,
-  isPremium,
-}: PremiumAccessPropType & {
+  isSaved,}: {
   category?: string;
   id: string;
   isSaved: boolean;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1508,13 +1429,11 @@ export const saveLink = async ({
 
 export const hideLink = async ({
   id,
-  isHidden,
-  isPremium,
-}: PremiumAccessPropType & {
+  isHidden,}: {
   id: string;
   isHidden: boolean;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1544,11 +1463,10 @@ export const hideLink = async ({
 };
 
 export const postVote = async ({
-  isPremium,
   dir,
   id,
-}: PremiumAccessPropType & { dir: number; id: string }) => {
-  checkAccess(isPremium);
+}: { dir: number; id: string }) => {
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     logApiRequest("cud", true);
@@ -1572,13 +1490,11 @@ export const postVote = async ({
 
 export const postComment = async ({
   parent,
-  text,
-  isPremium,
-}: PremiumAccessPropType & {
+  text,}: {
   parent: string;
   text: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1611,13 +1527,11 @@ export const postComment = async ({
 
 export const editUserText = async ({
   id,
-  text,
-  isPremium,
-}: PremiumAccessPropType & {
+  text,}: {
   id: string;
   text: string;
 }) => {
-  checkAccess(isPremium);
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1649,10 +1563,8 @@ export const editUserText = async ({
 };
 
 export const deleteLink = async ({
-  id,
-  isPremium,
-}: PremiumAccessPropType & { id: string }) => {
-  checkAccess(isPremium);
+  id,}: { id: string }) => {
+  
   const token = await (await getToken())?.accessToken;
   if (token && ratelimit_remaining > 1) {
     try {
@@ -1683,9 +1595,7 @@ export const findDuplicates = async ({
   loggedIn,
   permalink,
   after = "",
-  count = 0,
-  isPremium,
-}: PremiumAccessPropType & {
+  count = 0,}: {
   permalink: string;
   after?: string;
   count?: number;
@@ -1695,9 +1605,7 @@ export const findDuplicates = async ({
     try {
       logApiRequest("thread", false);
       let res = await (
-        await oauthGet(
-          accessToken,
-          isPremium,
+        await oauthGet(accessToken,
           `${permalink?.replace("/comments/", "/duplicates/")}`,
 
           {

@@ -8,10 +8,8 @@ import {
 import { fixCommentFormat } from "../../lib/utils";
 import { useMainContext } from "../MainContext";
 import { loadMoreComments, loadPost } from "../RedditAPI";
-import { useTAuth } from "../PremiumAuthContext";
 
 const useThread = (permalink, sort, initialData?, withContext = false) => {
-  const { isLoaded, premium } = useTAuth();
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
   const context: any = useMainContext();
@@ -108,7 +106,6 @@ const useThread = (permalink, sort, initialData?, withContext = false) => {
         loggedIn: !!session,
         token: context.token,
         sort,
-        isPremium: premium?.isPremium,
       });
       let morecomments = await fixCommentFormat(data?.data);
       return {
@@ -163,7 +160,6 @@ const useThread = (permalink, sort, initialData?, withContext = false) => {
         withcontext: withContext,
         loggedIn: !!session,
         token: context.token,
-        isPremium: premium?.isPremium,
       });
       token && context.setToken(token);
       if (!post) {
@@ -174,12 +170,7 @@ const useThread = (permalink, sort, initialData?, withContext = false) => {
 
       return { post, comments };
     } catch (err) {
-      if (err?.message === "PREMIUM REQUIRED") {
-        // context.setPremiumModal(true);
-        return { post: undefined, comments: [] };
-      } else {
-        throw err;
-      }
+      throw err;
     }
   };
 
@@ -187,7 +178,7 @@ const useThread = (permalink, sort, initialData?, withContext = false) => {
     ["thread", threadId, sort, commentId, withContext, session?.user?.name],
     fetchThread,
     {
-      enabled: isLoaded && threadId && !loading,
+      enabled: threadId && !loading,
       staleTime: context?.autoRefreshComments ? 0 : Infinity, // 5 * 60 * 1000, //5 min
       getNextPageParam: (lastpage: any) => {
         const lastComment =
