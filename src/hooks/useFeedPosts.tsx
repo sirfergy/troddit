@@ -3,6 +3,8 @@ import { UseInfiniteQueryResult } from "@tanstack/react-query";
 import useFeedGallery from "./useFeedGallery";
 import ToastCustom from "../components/toast/ToastCustom";
 import toast from "react-hot-toast";
+import { useDuplicateDetectionSafe } from "../components/DuplicateDetectionContext";
+
 const useFeedPosts = ({
   feed,
   askToUpdateFeed = true,
@@ -21,6 +23,7 @@ const useFeedPosts = ({
   setKey(k: string): void;
 }) => {
   const { setFeedData } = useFeedGallery();
+  const duplicateDetection = useDuplicateDetectionSafe();
 
   const [flatPosts, setFlatPosts] = useState<any[]>([]);
   const [newPosts, setNewPosts] = useState<any[]>([]);
@@ -40,6 +43,14 @@ const useFeedPosts = ({
       toast.remove("blocked");
     }
   }, [blocked]);
+
+  // Trigger duplicate detection when posts change
+  useEffect(() => {
+    if (flatPosts.length > 0 && duplicateDetection?.enabled) {
+      duplicateDetection.analyzePosts(flatPosts);
+    }
+  }, [flatPosts, duplicateDetection?.enabled]);
+
   useEffect(() => {
     const domain = window?.location?.hostname;
 

@@ -24,6 +24,7 @@ import IntInput from "./IntInput";
 import DefaultSortSelector from "./DefaultSortSelector";
 import ThemeSelector from "./ThemeSelector";
 import Toggles from "./Toggles";
+import DuplicateDetectionToggle from "./DuplicateDetectionToggle";
 
 const Settings = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -202,6 +203,7 @@ const Settings = () => {
     Behavior: {
       icon: <BiCog className={icons} />,
       settings: [
+        <DuplicateDetectionToggle key="duplicateDetection" />,
         ...["autoRead", "autoSeen", "infiniteLoading", "autoRefreshFeed"].map(
           (s: any) => (
             <Toggles

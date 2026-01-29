@@ -13,6 +13,8 @@ import { BiComment } from "react-icons/bi";
 import React, { useEffect, useMemo, useState } from "react";
 import { useWindowWidth } from "@react-hook/window-size";
 import ExternalLink from "../ui/ExternalLink";
+import DuplicateLabel from "../DuplicateLabel";
+import { useDuplicateDetectionSafe } from "../DuplicateDetectionContext";
 
 const VoteFilledUp = (
   <svg
@@ -42,6 +44,8 @@ const Card2 = ({
   newPost = false,
 }) => {
   const context: any = useMainContext();
+  const duplicateDetection = useDuplicateDetectionSafe();
+  const duplicateInfo = duplicateDetection?.getDuplicateInfo(post?.id);
   const windowWidth = useWindowWidth();
   const [mounted, setMounted] = useState(false);
   const voteScore = useMemo(() => {
@@ -296,6 +300,23 @@ const Card2 = ({
                     >
                       <p>•</p>
                       <span className="text-th-red">SPOILER</span>
+                    </div>
+                  )}
+                  {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost) && (
+                    <div
+                      className={
+                        (columns > 1 ? " hidden sm:flex " : "flex ") +
+                        " pl-1 space-x-1"
+                      }
+                    >
+                      <p>•</p>
+                      <DuplicateLabel
+                        confidence={duplicateInfo.confidence}
+                        reason={duplicateInfo.reason}
+                        duplicateOf={duplicateInfo.duplicateOf}
+                        isRepost={duplicateInfo.isRepost}
+                        originalPostAge={duplicateInfo.originalPostAge}
+                      />
                     </div>
                   )}
                   <div className="mx-0.5"></div>

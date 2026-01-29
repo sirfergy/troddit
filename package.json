@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^0.1.18",
     "@headlessui/react": "1.5",
     "@react-hook/resize-observer": "^1.2.5",
     "@react-hook/window-size": "^3.0.7",
