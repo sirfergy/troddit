@@ -1,10 +1,12 @@
 # Install dependencies only when needed
-FROM node:24-alpine AS deps
+FROM node:24-slim AS deps
 
 ENV NODE_ENV=production
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat g++ make py3-pip
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    g++ make python3 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,7 +15,7 @@ RUN yarn config set network-timeout 600000 -g
 RUN yarn install --frozen-lockfile 
 
 # Rebuild the source code only when needed
-FROM node:24-alpine AS builder
+FROM node:24-slim AS builder
 
 ENV NODE_ENV=production
 
@@ -28,7 +30,7 @@ COPY . .
 RUN yarn build && yarn install --production --ignore-scripts --prefer-offline
 
 # Production image, copy all the files and run next
-FROM node:24-alpine AS runner
+FROM node:24-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -39,8 +41,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 # Install GitHub Copilot CLI globally
 RUN npm install -g @github/copilot
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 --gid nodejs nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
 COPY --from=builder /app/next.config.js ./
