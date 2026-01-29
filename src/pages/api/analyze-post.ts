@@ -57,15 +57,9 @@ interface RedditSearchResult {
   permalink: string;
 }
 
-function createClient(token?: string): CopilotClient {
-  const env = { ...process.env };
-  if (token) {
-    env.GITHUB_TOKEN = token;
-    env.GH_TOKEN = token;
-  }
+function createClient(): CopilotClient {
   return new CopilotClient({ 
     autoStart: false, 
-    env,
     cliUrl: "http://localhost:4321",
   });
 }
@@ -360,10 +354,9 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { post, viewedHistory, token, cachedImageDescription, redditAccessToken } = req.body as {
+  const { post, viewedHistory, cachedImageDescription, redditAccessToken } = req.body as {
     post: Post;
     viewedHistory?: ViewedPost[];
-    token?: string;
     cachedImageDescription?: string;
     redditAccessToken?: string;
   };
@@ -372,7 +365,7 @@ export default async function handler(
     return res.status(400).json({ error: "Post is required" });
   }
 
-  const client = createClient(token);
+  const client = createClient();
   
   try {
     await client.start();

@@ -26,8 +26,6 @@ interface PostAnalysisContextType {
   // Settings
   isEnabled: boolean;
   setIsEnabled: (enabled: boolean) => void;
-  copilotToken: string;
-  setCopilotToken: (token: string) => void;
   
   // Analysis state
   analysisResults: Map<string, AnalysisResult>;
@@ -47,7 +45,6 @@ const PostAnalysisContext = createContext<PostAnalysisContextType | null>(null);
 // localStorage keys
 const STORAGE_KEYS = {
   ENABLED: "troddit_post_analysis_enabled",
-  TOKEN: "troddit_copilot_token",
   HISTORY: "troddit_viewed_history",
   IMAGE_CACHE: "troddit_image_descriptions",
 };
@@ -62,7 +59,6 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
   
   // Settings state
   const [isEnabled, setIsEnabledState] = useState(false);
-  const [copilotToken, setCopilotTokenState] = useState("");
   
   // Analysis state
   const [analysisResults, setAnalysisResults] = useState<Map<string, AnalysisResult>>(new Map());
@@ -82,9 +78,6 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
     
     const savedEnabled = localStorage.getItem(STORAGE_KEYS.ENABLED);
     if (savedEnabled === "true") setIsEnabledState(true);
-    
-    const savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
-    if (savedToken) setCopilotTokenState(savedToken);
     
     // Load and clean history
     const savedHistory = localStorage.getItem(STORAGE_KEYS.HISTORY);
@@ -120,13 +113,6 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
     setIsEnabledState(enabled);
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEYS.ENABLED, String(enabled));
-    }
-  }, []);
-
-  const setCopilotToken = useCallback((token: string) => {
-    setCopilotTokenState(token);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
     }
   }, []);
 
@@ -201,7 +187,7 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
 
   // Analyze a single post
   const analyzePost = useCallback(async (post: any) => {
-    if (!isEnabled || !copilotToken) return;
+    if (!isEnabled) return;
     
     const postId = post.data?.id || post.id;
     if (!postId) return;
@@ -232,7 +218,6 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
             created_utc: postData.created_utc,
           },
           viewedHistory,
-          token: copilotToken,
           cachedImageDescription: imageDescriptionCache.current[postId],
           redditAccessToken: redditToken,
         }),
@@ -261,7 +246,7 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
         return next;
       });
     }
-  }, [isEnabled, copilotToken, analysisResults, isAnalyzing, viewedHistory, redditToken, cacheImageDescription, addToHistory]);
+  }, [isEnabled, analysisResults, isAnalyzing, viewedHistory, redditToken, cacheImageDescription, addToHistory]);
 
   // Get result for a post
   const getResult = useCallback((postId: string) => {
@@ -276,8 +261,6 @@ export function PostAnalysisProvider({ children }: { children: React.ReactNode }
   const value: PostAnalysisContextType = {
     isEnabled,
     setIsEnabled,
-    copilotToken,
-    setCopilotToken,
     analysisResults,
     isAnalyzing,
     analyzePost,
