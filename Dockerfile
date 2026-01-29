@@ -1,5 +1,5 @@
 # Install dependencies only when needed
-FROM node:18-alpine AS deps
+FROM node:24-alpine AS deps
 
 ENV NODE_ENV=production
 
@@ -13,7 +13,7 @@ RUN yarn config set network-timeout 600000 -g
 RUN yarn install --frozen-lockfile 
 
 # Rebuild the source code only when needed
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 ENV NODE_ENV=production
 
@@ -28,7 +28,7 @@ COPY . .
 RUN yarn build && yarn install --production --ignore-scripts --prefer-offline
 
 # Production image, copy all the files and run next
-FROM node:18-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
