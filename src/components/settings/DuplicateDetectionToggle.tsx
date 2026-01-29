@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import Switch from "react-switch";
-import { BiCopy, BiKey, BiShow, BiHide } from "react-icons/bi";
-import { useDuplicateDetectionSafe } from "../DuplicateDetectionContext";
+import { BiCopy, BiKey, BiShow, BiHide, BiHistory } from "react-icons/bi";
+import { usePostAnalysisSafe } from "../PostAnalysisContext";
 
 const DuplicateDetectionToggle = () => {
-  const duplicateDetection = useDuplicateDetectionSafe();
+  const postAnalysis = usePostAnalysisSafe();
   const [showToken, setShowToken] = useState(false);
   
-  if (!duplicateDetection) {
+  if (!postAnalysis) {
     return null;
   }
 
-  const { enabled, setEnabled, isAnalyzing, token, setToken } = duplicateDetection;
+  const { isEnabled, setIsEnabled, copilotToken, setCopilotToken, isAnalyzing, viewedHistory } = postAnalysis;
+  const analyzingCount = isAnalyzing.size;
 
   return (
     <div className="flex flex-col w-full p-2 my-2 rounded-lg group hover:bg-th-highlight">
@@ -19,20 +20,20 @@ const DuplicateDetectionToggle = () => {
         <span className="flex flex-col gap-0.5">
           <span className="flex items-center gap-2">
             AI Duplicate Detection
-            {isAnalyzing && (
+            {analyzingCount > 0 && (
               <span className="text-xs text-th-accent animate-pulse">
-                (analyzing...)
+                (analyzing {analyzingCount}...)
               </span>
             )}
           </span>
           <span className="mr-2 text-xs opacity-70">
-            Uses AI to detect duplicate or similar posts in your feed and labels them with a "DUPE" tag.
+            Analyzes posts as you scroll to detect duplicates and reposts using AI.
           </span>
         </span>
         <div className="flex-none">
           <Switch
-            onChange={() => setEnabled(!enabled)}
-            checked={enabled}
+            onChange={() => setIsEnabled(!isEnabled)}
+            checked={isEnabled}
             checkedIcon={
               <div className="flex items-center justify-center w-full h-full">
                 <BiCopy className="w-4 h-4" />
@@ -52,7 +53,7 @@ const DuplicateDetectionToggle = () => {
         </div>
       </label>
       
-      {enabled && (
+      {isEnabled && (
         <div className="flex flex-col gap-3 mt-3 pl-1">
           <div className="flex flex-col gap-1.5">
             <label className="flex items-center gap-1.5 text-sm font-medium">
@@ -62,8 +63,8 @@ const DuplicateDetectionToggle = () => {
             <div className="relative">
               <input
                 type={showToken ? "text" : "password"}
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
+                value={copilotToken}
+                onChange={(e) => setCopilotToken(e.target.value)}
                 placeholder="Enter your GitHub token..."
                 className="w-full px-3 py-2 pr-10 text-sm border rounded-md bg-th-background border-th-border focus:outline-none focus:ring-2 focus:ring-th-accent"
               />
@@ -78,6 +79,11 @@ const DuplicateDetectionToggle = () => {
             <span className="text-xs opacity-60">
               GitHub token with Copilot access for AI duplicate detection.
             </span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs opacity-70">
+            <BiHistory className="w-4 h-4" />
+            <span>{viewedHistory.length} posts in history (1 week retention)</span>
           </div>
         </div>
       )}

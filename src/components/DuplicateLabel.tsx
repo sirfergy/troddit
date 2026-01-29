@@ -1,23 +1,36 @@
 import React from "react";
-import { BiCopy, BiHistory } from "react-icons/bi";
+import { BiCopy, BiHistory, BiLoaderAlt } from "react-icons/bi";
 
 interface DuplicateLabelProps {
-  confidence: number;
+  confidence?: number;
   reason?: string;
   duplicateOf?: string;
+  duplicateSource?: "batch" | "reddit" | "history";
   isRepost?: boolean;
   originalPostAge?: string;
+  isAnalyzing?: boolean;
   showTooltip?: boolean;
 }
 
 const DuplicateLabel: React.FC<DuplicateLabelProps> = ({
-  confidence,
+  confidence = 0,
   reason,
   duplicateOf,
+  duplicateSource,
   isRepost,
   originalPostAge,
+  isAnalyzing,
   showTooltip = true,
 }) => {
+  // Show analyzing spinner
+  if (isAnalyzing) {
+    return (
+      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium text-th-textLight bg-th-highlight">
+        <BiLoaderAlt className="w-3 h-3 animate-spin" />
+      </div>
+    );
+  }
+  
   // Only show label if confidence is high enough
   if (confidence < 70) return null;
 
@@ -35,13 +48,19 @@ const DuplicateLabel: React.FC<DuplicateLabelProps> = ({
 
   let tooltipText = "";
   if (reason) {
-    tooltipText = `${reason}${duplicateOf ? ` (Original: ${duplicateOf})` : ""} - ${confidence}% confidence`;
+    tooltipText = reason;
+    if (duplicateSource === "history") {
+      tooltipText += ` (from your history)`;
+    } else if (duplicateSource === "reddit") {
+      tooltipText += ` (found on Reddit)`;
+    }
+    tooltipText += ` - ${confidence}% confidence`;
   } else {
     tooltipText = `Likely duplicate - ${confidence}% confidence`;
   }
   
   if (isRepost && originalPostAge) {
-    tooltipText += ` | Repost of content from ${originalPostAge}`;
+    tooltipText += ` | ${originalPostAge}`;
   }
 
   // Show repost label if it's a repost (prioritize repost over dupe)
@@ -52,7 +71,7 @@ const DuplicateLabel: React.FC<DuplicateLabelProps> = ({
         title={showTooltip ? tooltipText : undefined}
       >
         <BiHistory className="w-3 h-3" />
-        <span>REPOST{originalPostAge ? ` (${originalPostAge})` : ""}</span>
+        <span>REPOST</span>
       </div>
     );
   }

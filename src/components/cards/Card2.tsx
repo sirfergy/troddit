@@ -14,7 +14,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useWindowWidth } from "@react-hook/window-size";
 import ExternalLink from "../ui/ExternalLink";
 import DuplicateLabel from "../DuplicateLabel";
-import { useDuplicateDetectionSafe } from "../DuplicateDetectionContext";
+import { usePostVisibilityAnalysis } from "../PostAnalysisContext";
 
 const VoteFilledUp = (
   <svg
@@ -44,8 +44,8 @@ const Card2 = ({
   newPost = false,
 }) => {
   const context: any = useMainContext();
-  const duplicateDetection = useDuplicateDetectionSafe();
-  const duplicateInfo = duplicateDetection?.getDuplicateInfo(post?.id);
+  const { ref: analysisRef, result: analysisResult, isAnalyzing } = usePostVisibilityAnalysis(post);
+  const duplicateInfo = analysisResult;
   const windowWidth = useWindowWidth();
   const [mounted, setMounted] = useState(false);
   const voteScore = useMemo(() => {
@@ -72,7 +72,7 @@ const Card2 = ({
   }, [])
   
   return (
-    <div onClick={(e) => handleClick(e)}>
+    <div ref={analysisRef} onClick={(e) => handleClick(e)}>
       <div
         className={
           " text-sm bg-th-post hover:bg-th-postHover group  hover:shadow-2xl transition-colors ring-1 hover:cursor-pointer ring-th-border2 hover:ring-th-borderHighlight2  shadow-md " +
@@ -302,7 +302,7 @@ const Card2 = ({
                       <span className="text-th-red">SPOILER</span>
                     </div>
                   )}
-                  {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost) && (
+                  {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost || isAnalyzing) && (
                     <div
                       className={
                         (columns > 1 ? " hidden sm:flex " : "flex ") +
@@ -311,11 +311,12 @@ const Card2 = ({
                     >
                       <p>•</p>
                       <DuplicateLabel
-                        confidence={duplicateInfo.confidence}
-                        reason={duplicateInfo.reason}
-                        duplicateOf={duplicateInfo.duplicateOf}
-                        isRepost={duplicateInfo.isRepost}
-                        originalPostAge={duplicateInfo.originalPostAge}
+                        confidence={duplicateInfo?.confidence}
+                        reason={duplicateInfo?.reason}
+                        duplicateOf={duplicateInfo?.duplicateOf}
+                        duplicateSource={duplicateInfo?.duplicateSource}
+                        isRepost={duplicateInfo?.isRepost}
+                        isAnalyzing={isAnalyzing}
                       />
                     </div>
                   )}

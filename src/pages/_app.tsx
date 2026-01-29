@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { MainProvider, localSeen } from "../MainContext";
 import { MySubsProvider } from "../MySubs";
 import { MyCollectionsProvider } from "../components/collections/CollectionContext";
-import { DuplicateDetectionProvider } from "../components/DuplicateDetectionContext";
+import { PostAnalysisProvider } from "../components/PostAnalysisContext";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -32,7 +32,7 @@ const App = ({ Component, pageProps }) => {
         <MainProvider>
           <MySubsProvider>
             <MyCollectionsProvider>
-              <DuplicateDetectionProvider>
+              <PostAnalysisProvider>
                 <QueryClientProvider client={queryClient}>
                   <NavBar />
                   <Component {...pageProps} />
@@ -41,7 +41,7 @@ const App = ({ Component, pageProps }) => {
                   <Analytics />
                   <ReactQueryDevtools initialIsOpen={false} />
                 </QueryClientProvider>
-              </DuplicateDetectionProvider>
+              </PostAnalysisProvider>
             </MyCollectionsProvider>
           </MySubsProvider>
         </MainProvider>

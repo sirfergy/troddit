@@ -22,7 +22,7 @@ import { GoRepoForked } from "react-icons/go";
 import { useWindowSize } from "@react-hook/window-size";
 import PostBody from "../PostBody";
 import DuplicateLabel from "../DuplicateLabel";
-import { useDuplicateDetectionSafe } from "../DuplicateDetectionContext";
+import { usePostVisibilityAnalysis } from "../PostAnalysisContext";
 const Row1 = ({
   post,
   columns,
@@ -42,8 +42,8 @@ const Row1 = ({
   const expandoRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const context: any = useMainContext();
-  const duplicateDetection = useDuplicateDetectionSafe();
-  const duplicateInfo = duplicateDetection?.getDuplicateInfo(post?.id);
+  const { ref: analysisRef, result: analysisResult, isAnalyzing } = usePostVisibilityAnalysis(post);
+  const duplicateInfo = analysisResult;
   const [windowWidth, windowHeight] = useWindowSize();
   const [expand, setexpand] = useState<boolean | undefined>();
   const [minHeight, setMinHeight] = useState(() => initHeight ?? 0);
@@ -92,7 +92,7 @@ const Row1 = ({
 
 
   return (
-    <>
+    <div ref={analysisRef}>
       <div
         ref={cardRef}
         onClick={(e) => handleClick(e)}
@@ -289,15 +289,16 @@ const Row1 = ({
                   <span className="text-th-red">SPOILER</span>
                 </div>
               )}
-              {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost) && (
+              {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost || isAnalyzing) && (
                 <div className="flex flex-row pl-1 space-x-1">
                   <p>•</p>
                   <DuplicateLabel
-                    confidence={duplicateInfo.confidence}
-                    reason={duplicateInfo.reason}
-                    duplicateOf={duplicateInfo.duplicateOf}
-                    isRepost={duplicateInfo.isRepost}
-                    originalPostAge={duplicateInfo.originalPostAge}
+                    confidence={duplicateInfo?.confidence}
+                    reason={duplicateInfo?.reason}
+                    duplicateOf={duplicateInfo?.duplicateOf}
+                    duplicateSource={duplicateInfo?.duplicateSource}
+                    isRepost={duplicateInfo?.isRepost}
+                    isAnalyzing={isAnalyzing}
                   />
                 </div>
               )}
@@ -534,7 +535,7 @@ const Row1 = ({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

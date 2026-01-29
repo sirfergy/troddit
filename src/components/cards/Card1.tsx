@@ -16,7 +16,7 @@ import CardMediaOverlay from "./CardMediaOverlay";
 import ExternalLink from "../ui/ExternalLink";
 import PostBody from "../PostBody";
 import DuplicateLabel from "../DuplicateLabel";
-import { useDuplicateDetectionSafe } from "../DuplicateDetectionContext";
+import { usePostVisibilityAnalysis } from "../PostAnalysisContext";
 
 const VoteFilledUp = (
   <svg
@@ -49,8 +49,8 @@ const Card1 = ({
   newPost = false,
 }) => {
   const context: any = useMainContext();
-  const duplicateDetection = useDuplicateDetectionSafe();
-  const duplicateInfo = duplicateDetection?.getDuplicateInfo(post?.id);
+  const { ref: analysisRef, result: analysisResult, isAnalyzing } = usePostVisibilityAnalysis(post);
+  const duplicateInfo = analysisResult;
   const [touched, setTouched] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [showCardMediaOverlay, setShowCardMediaOverlay] = useState(false);
@@ -163,6 +163,7 @@ const Card1 = ({
         />
       )}
       <div
+        ref={analysisRef}
         className={
           "relative " +
           (context.mediaOnly && hasMedia && (hovered ? " z-20 " : " z-0")) +
@@ -286,14 +287,15 @@ const Card1 = ({
                       <span className="text-th-red text-color ">SPOILER</span>
                     </div>
                   )}
-                  {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost) && (
+                  {(duplicateInfo?.isDuplicate || duplicateInfo?.isRepost || isAnalyzing) && (
                     <div className="before:content-['•'] before:pr-1">
                       <DuplicateLabel
-                        confidence={duplicateInfo.confidence}
-                        reason={duplicateInfo.reason}
-                        duplicateOf={duplicateInfo.duplicateOf}
-                        isRepost={duplicateInfo.isRepost}
-                        originalPostAge={duplicateInfo.originalPostAge}
+                        confidence={duplicateInfo?.confidence}
+                        reason={duplicateInfo?.reason}
+                        duplicateOf={duplicateInfo?.duplicateOf}
+                        duplicateSource={duplicateInfo?.duplicateSource}
+                        isRepost={duplicateInfo?.isRepost}
+                        isAnalyzing={isAnalyzing}
                       />
                     </div>
                   )}

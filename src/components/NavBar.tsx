@@ -18,12 +18,13 @@ import useRefresh from "../hooks/useRefresh";
 import useNavBarScrollHelper from "../hooks/useNavBarScrollHelper";
 import { useWindowWidth } from "@react-hook/window-size";
 import { AiOutlineSearch } from "react-icons/ai";
-import { useDuplicateDetectionSafe } from "./DuplicateDetectionContext";
+import { usePostAnalysisSafe } from "./PostAnalysisContext";
 
 const NavBar = ({ toggleSideNav = 0 }) => {
   const context: any = useMainContext();
   const { invalidateKey, refreshCurrent, fetchingCount } = useRefresh();
-  const duplicateDetection = useDuplicateDetectionSafe();
+  const postAnalysis = usePostAnalysisSafe();
+  const analyzingCount = postAnalysis?.isAnalyzing?.size ?? 0;
   const plausible = usePlausible();
   const router = useRouter();
   const windowWidth = useWindowWidth();
@@ -221,7 +222,7 @@ const NavBar = ({ toggleSideNav = 0 }) => {
             <div className="absolute top-0 z-30 w-screen h-1 bg-th-base"></div>
           </div>
         )}
-        {duplicateDetection?.isAnalyzing && (
+        {analyzingCount > 0 && (
           <div className="relative">
             <div className="absolute top-0 z-40 w-screen h-1 bg-violet-500 animate-pulse"></div>
             <div className="absolute top-0 z-30 w-screen h-1 bg-th-base"></div>
@@ -230,7 +231,7 @@ const NavBar = ({ toggleSideNav = 0 }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span>AI analyzing...</span>
+              <span>AI ({analyzingCount})</span>
             </div>
           </div>
         )}
