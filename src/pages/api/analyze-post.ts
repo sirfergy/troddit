@@ -58,9 +58,13 @@ interface RedditSearchResult {
 }
 
 function createClient(): CopilotClient {
+  const port = process.env.COPILOT_CLI_PORT || 4321;
   return new CopilotClient({ 
     autoStart: false, 
-    cliUrl: "http://localhost:4321",
+    cliUrl: `http://localhost:${port}`,
+    env: {
+      GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    },
   });
 }
 

@@ -38,8 +38,11 @@ ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install GitHub Copilot CLI globally
-RUN npm install -g @github/copilot
+# Install CA certificates for SSL and GitHub Copilot CLI globally
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g @github/copilot
 
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 --gid nodejs --create-home nextjs
