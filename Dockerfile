@@ -36,6 +36,9 @@ ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Install GitHub Copilot CLI globally
+RUN npm install -g @github/copilot-cli
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -46,10 +49,18 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy startup script
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 USER nextjs
 
 ARG portnum=3000
 EXPOSE ${portnum}
-ENV PORT ${portnum}
+# Expose Copilot CLI server port
+EXPOSE 4321
 
-CMD ["node","server.js"]
+ENV PORT ${portnum}
+ENV COPILOT_CLI_PORT 4321
+
+CMD ["./docker-entrypoint.sh"]
