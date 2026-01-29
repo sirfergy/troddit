@@ -42,7 +42,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm install -g @github/copilot
 
 RUN groupadd --system --gid 1001 nodejs
-RUN useradd --system --uid 1001 --gid nodejs nextjs
+RUN useradd --system --uid 1001 --gid nodejs --create-home nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
 COPY --from=builder /app/next.config.js ./
