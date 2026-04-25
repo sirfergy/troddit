@@ -14,6 +14,8 @@ on:
 
     branches:
       - "main"
+    tags:
+      - "v*"
   pull_request:
     branches:
       - "main"
@@ -30,32 +32,62 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       # https://github.com/docker/setup-qemu-action#usage
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        if: github.event_name != 'pull_request'
+        uses: docker/setup-qemu-action@v4
 
       # setup Docker build action
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to DockerHub
-        if: github.event.pull_request == null && github.repository == github.event.repository.full_name && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        if: github.event_name != 'pull_request' && github.repository == github.event.repository.full_name && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Resolve Docker image name
+        id: image
+        shell: bash
+        run: |
+          image="${{ secrets.DOCKERHUB_REPO }}"
+          if [ -z "$image" ]; then
+            image="${{ github.repository }}"
+          fi
+          if [[ "$image" == *:* && "${image##*/}" == *:* ]]; then
+            image="${image%:*}"
+          fi
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata
+        id: metadata
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=ref,event=pr
+            type=raw,value=nightly,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
       - name: Build image and push to Docker Hub
-        uses: docker/build-push-action@v5
+        id: docker_build
+        uses: docker/build-push-action@v7
         with:
           context: ./
-          tags: ${{ secrets.DOCKERHUB_REPO }}
-          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
           # Possible architectures
           #platforms: linux/amd64,linux/arm64,linux/riscv64,linux/ppc64le,linux/s390x,linux/386,linux/mips64le,linux/mips64,linux/arm/v7,linux/arm/v6
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

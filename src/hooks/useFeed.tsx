@@ -211,7 +211,6 @@ const useFeed = (params?: Params) => {
         ?.split("%20")
         ?.join("+")
         ?.split("+")?.length > 1 ||
-      feedParams.subreddits?.toUpperCase() == "ALL" ||
       feedParams.subreddits?.toUpperCase() == "POPULAR";
 
     const { filtered, filtercount } = await manageData(

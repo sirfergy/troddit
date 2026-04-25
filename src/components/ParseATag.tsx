@@ -3,6 +3,7 @@ import Image from "next/legacy/image";
 import React, { useEffect, useState } from "react";
 import { CgArrowsExpandDownRight, CgArrowsExpandUpLeft } from "react-icons/cg";
 import { useMainContext } from "../MainContext";
+import { isExpandableImageLink } from "../../lib/imageLinks";
 
 const ParseATag = (props) => {
   const context: any = useMainContext();
@@ -17,15 +18,7 @@ const ParseATag = (props) => {
         return false;
       }
 
-      let imgurRegex = /([A-z.]+\.)?(imgur(\.com))+(\/)+([A-z0-9]){7}\./gm;
-      let redditRegex =
-        /(preview+\.)+(reddit(\.com)|redd(\.it))+(\/[A-z0-9]+)+(\.(png|jpg|jpeg))\./gm;
-      let greedyRegex = /(\.(png|jpg|jpeg))/gm;
-      return !!(
-        link.match(imgurRegex) ||
-        link.match(redditRegex) ||
-        link.match(greedyRegex)
-      );
+      return isExpandableImageLink(link);
     };
 
     //todo: preserve text formatting

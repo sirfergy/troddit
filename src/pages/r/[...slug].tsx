@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
 import NavBar from "../../components/NavBar";
@@ -28,6 +27,7 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
   const [commentThread, setCommentThread] = useState(false);
   const [postThread, setPostThread] = useState(false);
   const [withCommentContext, setWithCommentContext] = useState(false);
+
   useEffect(() => {
     const getWiki = async (wikiquery: {wikiquery:string[]}) => {
       const data = await getWikiContent(wikiquery);
@@ -63,11 +63,11 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
       setSubsArray([]);
     };
   }, [query]);
+
   return (
     <div
       className={
-        (subsArray?.[0]?.toUpperCase() !== "ALL" &&
-        subsArray?.[0]?.toUpperCase() !== "POPULAR"
+        (subsArray?.[0]?.toUpperCase() !== "POPULAR"
           ? " -mt-2 "
           : "") + " overflow-x-hidden overflow-y-auto "
       }
@@ -107,8 +107,7 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
         )}
       </Head>
       <main>
-        {subsArray?.[0]?.toUpperCase() !== "ALL" &&
-        subsArray?.[0]?.toUpperCase() !== "POPULAR" &&
+        {subsArray?.[0]?.toUpperCase() !== "POPULAR" &&
         subsArray?.length > 0 ? (
           <div className="w-screen ">
             <SubredditBanner subreddits={subsArray} userMode={false} />

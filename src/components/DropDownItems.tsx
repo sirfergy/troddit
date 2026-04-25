@@ -7,7 +7,7 @@ import { AiOutlineHome } from "react-icons/ai";
 import { BiRightTopArrowCircle } from "react-icons/bi";
 import { BsChevronDown, BsList } from "react-icons/bs";
 import { IoMdRefresh } from "react-icons/io";
-import { CgLivePhoto, CgPlayListSearch } from "react-icons/cg";
+import { CgPlayListSearch } from "react-icons/cg";
 import { useSubsContext } from "../MySubs";
 import DropdownItem from "./DropdownItem";
 import DropdownSubCard from "./DropdownSubCard";
@@ -105,7 +105,6 @@ const DropDownItems = ({ show, hideExtra = false }) => {
           mySubs &&
           !multi &&
           currLocation !== "HOME" &&
-          currLocation !== "ALL" &&
           currLocation !== "POPULAR" && (
             <div className="py-2 pl-3 pr-4 hover:bg-th-highlight">
               <DropdownSubCard
@@ -147,21 +146,6 @@ const DropDownItems = ({ show, hideExtra = false }) => {
               >
                 <BiRightTopArrowCircle className="w-6 h-6" />
                 <h1>Popular</h1>
-              </div>
-            </MyLink>
-          )}
-        </Menu.Item>
-        <Menu.Item>
-          {({ active }) => (
-            <MyLink href="/r/all">
-              <div
-                className={
-                  (active ? "bg-th-highlight " : " ") +
-                  " flex flex-row items-center py-1.5 h-9 space-x-2  pl-4 cursor-pointer"
-                }
-              >
-                <CgLivePhoto className="w-6 h-6" />
-                <h1>All</h1>
               </div>
             </MyLink>
           )}

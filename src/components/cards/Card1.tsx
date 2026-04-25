@@ -264,14 +264,6 @@ const Card1 = ({
                       "yr ago",
                     ])}
                   </p>
-                  {post?.num_duplicates && (
-                    <span className="flex">
-                      <p className="before:content-['•']">
-                        {post?.num_duplicates} duplicate
-                        {post?.num_duplicates === 1 ? "" : "s"}
-                      </p>
-                    </span>
-                  )}
                   {post?.over_18 && (
                     <div className="before:content-['•'] before:pr-1">
                       <span className="text-th-red text-color ">NSFW</span>
@@ -774,15 +766,6 @@ const Card1 = ({
                         "yr ago",
                       ])}
                     </p>
-                    {post?.num_duplicates > 0 && (
-                      <span className="flex">
-                        <p className="mx-1">•</p>
-                        <p className="">
-                          {post?.num_duplicates} duplicate
-                          {post?.num_duplicates === 1 ? "" : "s"}
-                        </p>
-                      </span>
-                    )}
                     {post?.over_18 && (
                       <div className="flex flex-row pl-1 space-x-1">
                         <p>•</p>

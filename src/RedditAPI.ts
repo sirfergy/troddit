@@ -295,8 +295,7 @@ export const loadSubreddits = async ({
   let getSRDetail =
     sr_detail ||
     subreddits?.split("+")?.length > 1 ||
-    subreddits?.toUpperCase()?.includes("POPULAR") ||
-    subreddits?.toUpperCase()?.includes("ALL");
+    subreddits?.toUpperCase()?.includes("POPULAR");
 
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
@@ -359,7 +358,7 @@ export const getRedditSearch = async ({
   after,
   sort = "hot",
   loggedIn = false,
-  subreddit = "all",
+  subreddit,
   range,
   token,
   include_over_18,
@@ -388,7 +387,7 @@ export const getRedditSearch = async ({
   } else {
     p["include_over_18"] = "0";
   }
-  if (subreddit !== "all") {
+  if (subreddit) {
     oathsearch = `/r/${subreddit}/search/.json?q=${
       p.q
     }&sort=${sort}&restrict_sr=on&include_over_18=${
@@ -1588,65 +1587,4 @@ export const deleteLink = async ({
     }
   }
   throw new Error("Unable to delete");
-};
-
-export const findDuplicates = async ({
-  token,
-  loggedIn,
-  permalink,
-  after = "",
-  count = 0,}: {
-  permalink: string;
-  after?: string;
-  count?: number;
-} & RedditSessionPropsType) => {
-  let { returnToken, accessToken } = await checkToken(loggedIn, token);
-  if (loggedIn && accessToken) {
-    try {
-      logApiRequest("thread", false);
-      let res = await (
-        await oauthGet(accessToken,
-          `${permalink?.replace("/comments/", "/duplicates/")}`,
-
-          {
-            headers: {
-              authorization: `bearer ${accessToken}`,
-            },
-            params: {
-              raw_json: 1,
-              after,
-              count,
-            },
-          }
-        )
-      ).data;
-      //console.log("Dup:", res);
-      return { res, returnToken };
-    } catch (err) {
-      throw err;
-    }
-  } else {
-    try {
-      logApiRequest("thread", false);
-      let res = await (
-        await axios.get(
-          `https://www.reddit.com${permalink?.replace(
-            "/comments/",
-            "/duplicates/"
-          )}.json`,
-          {
-            params: {
-              raw_json: 1,
-              after,
-              count,
-            },
-          }
-        )
-      ).data;
-      //console.log("duplo",res);
-      return { res };
-    } catch (err) {
-      console.log("err", err);
-    }
-  }
 };

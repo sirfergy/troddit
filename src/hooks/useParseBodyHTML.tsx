@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
 import ParseATag from "../components/ParseATag";
+import { isExpandableImageLink } from "../../lib/imageLinks";
 
 import HtmlToReact from "html-to-react";
 
@@ -42,15 +43,7 @@ const checkSupport = (link: string, node: any) => {
     return false;
   }
 
-  let imgurRegex = /([A-z.]+\.)?(imgur(\.com))+(\/)+([A-z0-9]){7}\./gm;
-  let redditRegex =
-    /(preview+\.)+(reddit(\.com)|redd(\.it))+(\/[A-z0-9]+)+(\.(png|jpg|jpeg))\./gm;
-  let greedyRegex = /(\.(png|jpg|jpeg))/gm;
-  return !!(
-    link.match(imgurRegex) ||
-    link.match(redditRegex) ||
-    link.match(greedyRegex)
-  );
+  return isExpandableImageLink(link);
 };
 
 const useParseBodyHTML = ({ rawHTML, newTabLinks = false }) => {
