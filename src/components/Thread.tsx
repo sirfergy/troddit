@@ -10,10 +10,7 @@ import Link from "next/link";
 import { useWindowSize } from "@react-hook/window-size";
 import { useSession } from "next-auth/react";
 import { BiDownvote, BiUpvote, BiExpand, BiCollapse } from "react-icons/bi";
-import {
-  HiOutlineDocumentDuplicate,
-  HiOutlineSwitchHorizontal,
-} from "react-icons/hi";
+import { HiOutlineSwitchHorizontal } from "react-icons/hi";
 import { BiComment, BiExit } from "react-icons/bi";
 import { RiArrowGoBackLine } from "react-icons/ri";
 import { AiOutlineRight, AiOutlineLeft } from "react-icons/ai";
@@ -47,9 +44,6 @@ import { useRead } from "../hooks/useRead";
 
 import toast from "react-hot-toast";
 import ToastCustom from "./toast/ToastCustom";
-import useDuplicates from "../hooks/useDuplicates";
-import MiniCard from "./cards/MiniCard";
-import { CgSpinnerTwo } from "react-icons/cg";
 import { MdOutlineCompress, MdOutlineExpand } from "react-icons/md";
 import PostBody from "./PostBody";
 import LoaderPuff from "./ui/LoaderPuff";
@@ -66,8 +60,6 @@ const Thread = ({
   commentMode = false,
   commentsDirect = false,
   direct = false,
-  duplicates = false,
-  handleBackToThread = () => {},
   goBack = (a, b) => {},
   setCurPost,
 }) => {
@@ -75,15 +67,6 @@ const Thread = ({
   sort ??= context.defaultCommentSort;
   const { data: session, status } = useSession();
   const { thread } = useThread(permalink, sort, undefined, withContext);
-  const [showDuplicates, setShowDuplicates] = useState(() => duplicates);
-  useEffect(() => {
-    setShowDuplicates(duplicates);
-  }, [duplicates]);
-
-  const { duplicateQuery, flatPosts, totalDuplicates } = useDuplicates({
-    enabled: showDuplicates,
-    permalink,
-  });
   const [windowWidth, windowHeight] = useWindowSize();
   const containerRef = useRef<HTMLDivElement>(null);
   //initPost so later refetches will keep media (ie videos) stable
@@ -974,228 +957,133 @@ const Thread = ({
                   left: 0,
                 }}
               ></div>
-              {showDuplicates ? (
-                <div className="p-4">
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex flex-row items-center gap-2">
-                      <HiOutlineDocumentDuplicate className="flex-none w-6 h-6 " />
-                      <h2 className="flex items-center gap-1">
-                        {duplicateQuery.isLoading && !flatPosts && (
-                          <>
-                            <CgSpinnerTwo className="w-4 h-4 animate-spin" />
-                          </>
-                        )}
-                        {`${
-                          totalDuplicates === 0
-                            ? 0
-                            : totalDuplicates
-                            ? totalDuplicates
-                            : !duplicateQuery.isLoading &&
-                              !(flatPosts?.length ?? 0 > 0)
-                            ? 0
-                            : !duplicateQuery.isLoading
-                            ? "??"
-                            : ""
-                        } Other Discussion${totalDuplicates == 1 ? "" : "s"}`}
-                      </h2>
-                    </div>
-                    {post.permalink && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleBackToThread();
-                        }}
-                      >
-                        <a
-                          onClick={() => setShowDuplicates(false)}
-                          className="text-sm font-semibold text-th-link hover:text-th-linkHover"
-                        >
-                          back to thread
-                        </a>
-                      </button>
-                    )}
-                  </div>
-
-                  {flatPosts?.map(({ data, i }) => (
-                    <div
-                      key={data?.name ?? i}
-                      className={"bg-th-post rounded-lg my-2"}
-                    >
-                      <MiniCard post={data} />
-                    </div>
-                  ))}
-                  {!flatPosts && duplicateQuery.isLoading && (
-                    <>
-                      {[...new Array(5)].map((i) => (
-                        <div
-                          key={i}
-                          className="w-full h-20 my-2 rounded-lg bg-th-post animate-pulse"
-                        ></div>
-                      ))}
-                    </>
-                  )}
-                  {duplicateQuery.hasNextPage && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          duplicateQuery.fetchNextPage();
-                        }}
-                        disabled={duplicateQuery.isFetchingNextPage}
-                        className={
-                          "flex flex-row items-center justify-center w-full gap-1 p-4 text-sm border rounded-md border-th-border  bg-th-post  " +
-                          (duplicateQuery.isFetchingNextPage
-                            ? ""
-                            : " hover:border-th-borderHighlight hover:bg-th-postHover ")
-                        }
-                      >
-                        Load More
-                        {duplicateQuery.isFetchingNextPage && (
-                          <>
-                            <CgSpinnerTwo className="w-4 h-4 animate-spin" />
-                          </>
-                        )}
-                      </button>
-                    </>
-                  )}
-                  <div className="py-10"></div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-row flex-wrap justify-between px-2 mt-2 ">
-                    <div
-                      ref={commentsRef}
-                      className="flex flex-row items-center space-x-1 md:pl-2 md:space-x-2"
-                    >
-                      <BiComment className="flex-none w-6 h-6 " />
-                      <div className="flex flex-row items-baseline mb-1 space-x-1">
-                        <span className="">{`${
-                          post?.num_comments ?? "??"
-                        }`}</span>
-                        <span className="hidden md:block">
-                          {`comment${post?.num_comments == 1 ? "" : "s"}`}
-                        </span>
-                        {typeof origCommentCount === "number" &&
-                          post?.num_comments > origCommentCount && (
-                            <h2 className="text-xs italic font-medium">{`(${
-                              post?.num_comments - origCommentCount
-                            } new)`}</h2>
-                          )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center h-full gap-2">
-                      <button
-                        aria-label="refresh comments"
-                        disabled={thread.isFetching}
-                        onClick={() => {
-                          setOrigCommentCount(post?.num_comments ?? undefined);
-                          setOrigReadTime(newReadTime);
-                          thread.refetch();
-                        }}
-                      >
-                        <IoMdRefresh
-                          className={
-                            (thread.isFetching ? "animate-spin" : " ") +
-                            " w-5 h-5 flex-none"
-                          }
-                        />
-                      </button>
-                      {!commentMode && (
-                        <div className="z-10 flex-none mb-1 h-9">
-                          <CommentSort updateSort={updateSort} sortBy={sort} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Loading Comments */}
-                  {!commentsReady && (
-                    // Comment Loader
-                    <>
-                      {[
-                        ...Array(
-                          parseInt(post?.num_comments) < 5
-                            ? parseInt(post?.num_comments)
-                            : 5
-                        ),
-                      ].map((u, i) => (
-                        <div key={i}>{commentPlaceHolder}</div>
-                      ))}{" "}
-                    </>
-                  )}
-
-                  <div className="w-full mb-5 ">
-                    <span
-                      className={
-                        "flex justify-center w-full  text-xs text-center text-th-textLight mt-2"
-                      }
-                    >
-                      {!(thread.data?.pages?.[0]?.comments?.length > 0) &&
-                      thread.isFetched &&
-                      !thread.isError ? (
-                        <span className="mt-8">{"no comments :("}</span>
-                      ) : null}
+              <div className="flex flex-row flex-wrap justify-between px-2 mt-2 ">
+                <div
+                  ref={commentsRef}
+                  className="flex flex-row items-center space-x-1 md:pl-2 md:space-x-2"
+                >
+                  <BiComment className="flex-none w-6 h-6 " />
+                  <div className="flex flex-row items-baseline mb-1 space-x-1">
+                    <span className="">{`${
+                      post?.num_comments ?? "??"
+                    }`}</span>
+                    <span className="hidden md:block">
+                      {`comment${post?.num_comments == 1 ? "" : "s"}`}
                     </span>
-                    {/* Open All Comments */}
-
-                    {commentMode && (
-                      <div className="flex-grow w-full px-2 mt-1 text-sm">
-                        <div className="p-2 mb-3 border rounded-lg bg-th-background2 border-th-border2">
-                          <p className="flex flex-col mx-3 text-sm font-normal ">
-                            <span>
-                              You are viewing a single comment's thread
-                            </span>
-                            <span className="text-xs">
-                              <Link
-                                legacyBehavior
-                                href={`/${post?.permalink}`}
-                                passHref
-                              >
-                                <a className="font-semibold text-th-link hover:text-th-linkHover">
-                                  Click to view all comments
-                                </a>
-                              </Link>
-                              {!withContext && (
-                                <Link
-                                  legacyBehavior
-                                  href={`${postComments?.[0]?.data?.permalink}?context=10000`}
-                                  passHref
-                                >
-                                  <a className="ml-2 font-semibold text-th-link hover:text-th-linkHover">
-                                    view context
-                                  </a>
-                                </Link>
-                              )}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={"w-full px-2  "}>
-                      {postComments?.length > 0 && (
-                        <Comments
-                          comments={postComments}
-                          containerRef={containerRef}
-                          depth={0}
-                          op={post?.author}
-                          portraitMode={usePortrait}
-                          sort={sort}
-                          thread={thread}
-                          locked={post?.locked}
-                          scoreHideMins={
-                            sub?.data?.data?.comment_score_hide_mins
-                          }
-                          setCommentsReady={setCommentsReady}
-                          readTime={origReadTime}
-                        />
+                    {typeof origCommentCount === "number" &&
+                      post?.num_comments > origCommentCount && (
+                        <h2 className="text-xs italic font-medium">{`(${
+                          post?.num_comments - origCommentCount
+                        } new)`}</h2>
                       )}
-                    </div>
-                    <div className="py-5"></div>
                   </div>
+                </div>
+
+                <div className="flex items-center h-full gap-2">
+                  <button
+                    aria-label="refresh comments"
+                    disabled={thread.isFetching}
+                    onClick={() => {
+                      setOrigCommentCount(post?.num_comments ?? undefined);
+                      setOrigReadTime(newReadTime);
+                      thread.refetch();
+                    }}
+                  >
+                    <IoMdRefresh
+                      className={
+                        (thread.isFetching ? "animate-spin" : " ") +
+                        " w-5 h-5 flex-none"
+                      }
+                    />
+                  </button>
+                  {!commentMode && (
+                    <div className="z-10 flex-none mb-1 h-9">
+                      <CommentSort updateSort={updateSort} sortBy={sort} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Loading Comments */}
+              {!commentsReady && (
+                // Comment Loader
+                <>
+                  {[
+                    ...Array(
+                      parseInt(post?.num_comments) < 5
+                        ? parseInt(post?.num_comments)
+                        : 5
+                    ),
+                  ].map((u, i) => (
+                    <div key={i}>{commentPlaceHolder}</div>
+                  ))}{" "}
                 </>
               )}
+
+              <div className="w-full mb-5 ">
+                <span
+                  className={
+                    "flex justify-center w-full  text-xs text-center text-th-textLight mt-2"
+                  }
+                >
+                  {!(thread.data?.pages?.[0]?.comments?.length > 0) &&
+                  thread.isFetched &&
+                  !thread.isError ? (
+                    <span className="mt-8">{"no comments :("}</span>
+                  ) : null}
+                </span>
+                {/* Open All Comments */}
+
+                {commentMode && (
+                  <div className="flex-grow w-full px-2 mt-1 text-sm">
+                    <div className="p-2 mb-3 border rounded-lg bg-th-background2 border-th-border2">
+                      <p className="flex flex-col mx-3 text-sm font-normal ">
+                        <span>You are viewing a single comment's thread</span>
+                        <span className="text-xs">
+                          <Link
+                            legacyBehavior
+                            href={`/${post?.permalink}`}
+                            passHref
+                          >
+                            <a className="font-semibold text-th-link hover:text-th-linkHover">
+                              Click to view all comments
+                            </a>
+                          </Link>
+                          {!withContext && (
+                            <Link
+                              legacyBehavior
+                              href={`${postComments?.[0]?.data?.permalink}?context=10000`}
+                              passHref
+                            >
+                              <a className="ml-2 font-semibold text-th-link hover:text-th-linkHover">
+                                view context
+                              </a>
+                            </Link>
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className={"w-full px-2  "}>
+                  {postComments?.length > 0 && (
+                    <Comments
+                      comments={postComments}
+                      containerRef={containerRef}
+                      depth={0}
+                      op={post?.author}
+                      portraitMode={usePortrait}
+                      sort={sort}
+                      thread={thread}
+                      locked={post?.locked}
+                      scoreHideMins={sub?.data?.data?.comment_score_hide_mins}
+                      setCommentsReady={setCommentsReady}
+                      readTime={origReadTime}
+                    />
+                  )}
+                </div>
+                <div className="py-5"></div>
+              </div>
             </div>
             <div
               onClick={() => goBack(false, true)}

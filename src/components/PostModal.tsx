@@ -29,7 +29,6 @@ const PostModal = ({
   commentMode = false,
   withcontext = false,
   feedLoading = false,
-  duplicates = false,
   flattenedPosts = [] as any[],
 }) => {
   const router = useRouter();
@@ -47,31 +46,6 @@ const PostModal = ({
   const [curPostNum, setCurPostNum] = useState(postNum);
   const [showUI, setShowUI] = useState(true);
   const [hideArrows, setHideArrows] = useState(false);
-  const [showDuplicates, setShowDuplicates] = useState(() => duplicates);
-  useEffect(() => {
-    const params = new Proxy(new URLSearchParams(window.location.search), {
-      get: (searchParams, prop) => searchParams.get(prop as string),
-    });
-    if (router?.query?.slug?.[1] === "duplicates" || params?.["duplicates"]) {
-      setShowDuplicates(true);
-    } else {
-      setShowDuplicates(false);
-    }
-  }, [router.query]);
-  const handleBackToThread = () => {
-    //go back
-    if (!duplicates && showDuplicates) {
-      router.back();
-    } else {
-      router.replace(
-        "",
-        router.asPath.includes("/duplicates/")
-          ? router.asPath.replace("/duplicates/", "/comments/")
-          : "",
-        { shallow: true }
-      );
-    }
-  };
 
   useEffect(() => {
     if (showUI) {
@@ -144,17 +118,10 @@ const PostModal = ({
             //do nothing
           } else if (returnRoute) {
             //console.log("last route", returnRoute);
-            if (
-              router.asPath.includes("?duplicates") ||
-              router.asPath.includes("&duplicates")
-            ) {
-              router.replace(returnRoute, returnRoute, { shallow: true });
-            } else {
-              router.replace(returnRoute, returnRoute, {
-                shallow: direct ? false : true,
-              });
-              //router.back();
-            }
+            router.replace(returnRoute, returnRoute, {
+              shallow: direct ? false : true,
+            });
+            //router.back();
           } else {
             router.back();
           }
@@ -450,8 +417,6 @@ const PostModal = ({
               withContext={withcontext}
               setCurPost={setCurPost}
               direct={direct}
-              duplicates={showDuplicates}
-              handleBackToThread={handleBackToThread}
             />
           </div>
         )}
