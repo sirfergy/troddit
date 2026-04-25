@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import Link from "next/link";
 import Head from "next/head";
 import NavBar from "../../components/NavBar";
@@ -22,20 +21,12 @@ import { getToken } from "next-auth/jwt";
 import { getSession } from "next-auth/react";
 
 const SubredditPage = ({ query, metaTags, post, postData }) => {
-  const router = useRouter();
   const [subsArray, setSubsArray] = useState<string[]>([]);
   const [wikiContent, setWikiContent] = useState("");
   const [wikiMode, setWikiMode] = useState(false);
   const [commentThread, setCommentThread] = useState(false);
   const [postThread, setPostThread] = useState(false);
   const [withCommentContext, setWithCommentContext] = useState(false);
-  const isAllView = query?.slug?.[0]?.toUpperCase() === "ALL";
-
-  useEffect(() => {
-    if (isAllView) {
-      router.replace("/r/popular");
-    }
-  }, [isAllView, router]);
 
   useEffect(() => {
     const getWiki = async (wikiquery: {wikiquery:string[]}) => {
@@ -72,10 +63,6 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
       setSubsArray([]);
     };
   }, [query]);
-
-  if (isAllView) {
-    return null;
-  }
 
   return (
     <div
@@ -164,10 +151,6 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
 
 SubredditPage.getInitialProps = async (d) => {
   const { query, req, res } = d;
-  if (query?.slug?.[0]?.toUpperCase() === "ALL" && res) {
-    res.writeHead(307, { Location: "/r/popular" });
-    res.end();
-  }
   // let subreddits = query?.slug?.[0];
   // subreddits = query?.slug?.[0]?.split(" ")?.join("+")?.split("%2b")?.join("+");
   return { query };
