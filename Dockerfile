@@ -1,8 +1,6 @@
 # Install dependencies only when needed
 FROM node:24-alpine AS deps
 
-ENV NODE_ENV=production
-
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat g++ make py3-pip
 
@@ -10,7 +8,7 @@ WORKDIR /app
 
 COPY package.json yarn.lock ./
 RUN yarn config set network-timeout 600000 -g
-RUN yarn install --frozen-lockfile 
+RUN yarn install --frozen-lockfile --production=false
 
 # Rebuild the source code only when needed
 FROM node:24-alpine AS builder
