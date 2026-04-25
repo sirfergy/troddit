@@ -5,6 +5,7 @@ import {
   userFilters,
 } from "../src/MainContext";
 import { GalleryInfo, ImageInfo, MediaInfo, VideoInfo } from "../types";
+import { hasSupportedImageExtension } from "./imageLinks";
 
 const DOMAIN = "www.troddit.com";
 export const secondsToTime = (
@@ -305,14 +306,7 @@ export const findMediaInfo = async (
     ) {
       isLink = false;
     }
-    let domainEnd = post?.url?.split("?")?.[0]?.split(".")?.[
-      post?.url?.split("?")?.[0]?.split(".")?.length - 1
-    ];
-    //console.log(domainEnd);
-    if (
-      (domainEnd === "jpg" || domainEnd === "png" || domainEnd === "gif") &&
-      dimensions[0] > 0
-    ) {
+    if (hasSupportedImageExtension(post?.url) && dimensions[0] > 0) {
       isLink = false;
       isImage = true;
     }
@@ -547,11 +541,7 @@ export const findMediaInfo = async (
       }
     } else if (post.url) {
       let purl: string = post.url;
-      if (
-        purl?.includes(".jpg") ||
-        purl?.includes(".png") ||
-        (purl?.includes(".gif") && !purl?.includes(".gifv")) //gifs should be handled in findVideo with mp4 format
-      ) {
+      if (hasSupportedImageExtension(purl)) {
         if (!quick) {
           let info = await loadImg(purl);
           imageInfo = info;
