@@ -22,12 +22,21 @@ import { getToken } from "next-auth/jwt";
 import { getSession } from "next-auth/react";
 
 const SubredditPage = ({ query, metaTags, post, postData }) => {
+  const router = useRouter();
   const [subsArray, setSubsArray] = useState<string[]>([]);
   const [wikiContent, setWikiContent] = useState("");
   const [wikiMode, setWikiMode] = useState(false);
   const [commentThread, setCommentThread] = useState(false);
   const [postThread, setPostThread] = useState(false);
   const [withCommentContext, setWithCommentContext] = useState(false);
+  const isAllView = query?.slug?.[0]?.toUpperCase() === "ALL";
+
+  useEffect(() => {
+    if (isAllView) {
+      router.replace("/r/popular");
+    }
+  }, [isAllView, router]);
+
   useEffect(() => {
     const getWiki = async (wikiquery: {wikiquery:string[]}) => {
       const data = await getWikiContent(wikiquery);
@@ -63,11 +72,15 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
       setSubsArray([]);
     };
   }, [query]);
+
+  if (isAllView) {
+    return null;
+  }
+
   return (
     <div
       className={
-        (subsArray?.[0]?.toUpperCase() !== "ALL" &&
-        subsArray?.[0]?.toUpperCase() !== "POPULAR"
+        (subsArray?.[0]?.toUpperCase() !== "POPULAR"
           ? " -mt-2 "
           : "") + " overflow-x-hidden overflow-y-auto "
       }
@@ -107,8 +120,7 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
         )}
       </Head>
       <main>
-        {subsArray?.[0]?.toUpperCase() !== "ALL" &&
-        subsArray?.[0]?.toUpperCase() !== "POPULAR" &&
+        {subsArray?.[0]?.toUpperCase() !== "POPULAR" &&
         subsArray?.length > 0 ? (
           <div className="w-screen ">
             <SubredditBanner subreddits={subsArray} userMode={false} />
@@ -152,6 +164,10 @@ const SubredditPage = ({ query, metaTags, post, postData }) => {
 
 SubredditPage.getInitialProps = async (d) => {
   const { query, req, res } = d;
+  if (query?.slug?.[0]?.toUpperCase() === "ALL" && res) {
+    res.writeHead(307, { Location: "/r/popular" });
+    res.end();
+  }
   // let subreddits = query?.slug?.[0];
   // subreddits = query?.slug?.[0]?.split(" ")?.join("+")?.split("%2b")?.join("+");
   return { query };

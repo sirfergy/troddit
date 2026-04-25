@@ -691,7 +691,7 @@ export const MySubsProvider = ({ children }) => {
         } else {
           setCurrLocation(curr);
         }
-        if (curr.toUpperCase() !== "ALL" || curr.toUpperCase() !== "POPULAR") {
+        if (curr.toUpperCase() !== "POPULAR") {
           loadCurrSubInfo(curr);
         }
       } else if (router?.route === "/search") {

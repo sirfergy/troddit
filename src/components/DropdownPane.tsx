@@ -4,7 +4,7 @@ import Image from "next/legacy/image";
 
 import { BsChevronDown } from "react-icons/bs";
 import { AiOutlineHome, AiOutlineSearch } from "react-icons/ai";
-import { CgLivePhoto, CgPlayListSearch } from "react-icons/cg";
+import { CgPlayListSearch } from "react-icons/cg";
 import { BiRightTopArrowCircle } from "react-icons/bi";
 import { HiOutlineMinus } from "react-icons/hi";
 import DropdownItem from "./DropdownItem";
@@ -67,8 +67,6 @@ const DropdownPane = ({ hide }) => {
                   <AiOutlineHome className="w-6 h-6" />
                 ) : currLocation === "POPULAR" ? (
                   <BiRightTopArrowCircle className="w-6 h-6" />
-                ) : currLocation === "ALL" ? (
-                  <CgLivePhoto className="w-6 h-6" />
                 ) : currLocation === "SEARCH" ? (
                   <AiOutlineSearch className="w-6 h-6" />
                 ) : currLocation === "SUBREDDITS" ? (
@@ -109,7 +107,6 @@ const DropdownPane = ({ hide }) => {
               }
               {(currLocation == "HOME" ||
                 currLocation == "POPULAR" ||
-                currLocation == "ALL" ||
                 currLocation === "SEARCH" ||
                 currLocation === "SUBREDDITS") && (
                 <h1 className="ml-2 capitalize truncate">

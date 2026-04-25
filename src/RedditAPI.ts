@@ -295,8 +295,7 @@ export const loadSubreddits = async ({
   let getSRDetail =
     sr_detail ||
     subreddits?.split("+")?.length > 1 ||
-    subreddits?.toUpperCase()?.includes("POPULAR") ||
-    subreddits?.toUpperCase()?.includes("ALL");
+    subreddits?.toUpperCase()?.includes("POPULAR");
 
   if (loggedIn && accessToken && ratelimit_remaining > 1) {
     try {
@@ -359,7 +358,7 @@ export const getRedditSearch = async ({
   after,
   sort = "hot",
   loggedIn = false,
-  subreddit = "all",
+  subreddit,
   range,
   token,
   include_over_18,
@@ -388,7 +387,7 @@ export const getRedditSearch = async ({
   } else {
     p["include_over_18"] = "0";
   }
-  if (subreddit !== "all") {
+  if (subreddit) {
     oathsearch = `/r/${subreddit}/search/.json?q=${
       p.q
     }&sort=${sort}&restrict_sr=on&include_over_18=${
