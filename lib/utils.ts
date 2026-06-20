@@ -361,31 +361,10 @@ export const findMediaInfo = async (
   };
 
   const findGfy = async (id, post) => {
-    let req = await fetch(`https://api.gfycat.com/v1/gfycats/${id}`);
-    if (req?.ok) {
-      let data = await req.json();
-      videoInfo = [
-        {
-          src: data["gfyItem"]["mp4Url"],
-          height: data["gfyItem"]["height"],
-          width: data["gfyItem"]["width"],
-          hasAudio: data["gfyItem"]["hasAudio"],
-        },
-      ];
-      if (data["gfyItem"]["mobileUrl"]) {
-        videoInfo.push({
-          src: data["gfyItem"]["mobileUrl"],
-          height: data["gfyItem"]["height"],
-          width: data["gfyItem"]["width"],
-          hasAudio: data["gfyItem"]["hasAudio"],
-        });
-      }
-      findImage(post);
-      isVideo = true;
-      return true;
-    } else {
-      findVideo(post, true);
-    }
+    // gfycat shut down in 2023 and api.gfycat.com no longer resolves. Skip the
+    // dead endpoint and fall back to Reddit's own preview/mirror so a single
+    // gfycat link can't crash the whole feed.
+    return await findVideo(post, true);
   };
 
   const findVideo = async (post, skipGfy = false) => {
@@ -604,7 +583,30 @@ export const findMediaInfo = async (
     return false;
   };
 
-  return loadInfo(post?.crosspost_parent_list?.[0] ?? post, quick);
+  try {
+    return await loadInfo(post?.crosspost_parent_list?.[0] ?? post, quick);
+  } catch (err) {
+    // Media resolution must never crash the feed (e.g. a dead third-party host
+    // or a malformed item); fall back to treating the post as a plain link.
+    return {
+      videoInfo: undefined,
+      imageInfo: undefined,
+      thumbnailInfo: undefined,
+      iFrameHTML: undefined,
+      galleryInfo: undefined,
+      isPortrait: undefined,
+      isImage: false,
+      isVideo: false,
+      isLink: true,
+      isSelf: false,
+      isTweet: false,
+      isYTVid: false,
+      isIframe: false,
+      isDual: false,
+      hasMedia: false,
+      dimensions: [0, 0],
+    } as unknown as MediaInfo;
+  }
 };
 
 export const checkImageInCache = (imageUrl, callback) => {
