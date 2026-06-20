@@ -1,17 +1,10 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { getSession } from "next-auth/react";
 import type { Route_Types } from "../types/logs";
-// let subUrl         = (sub == "" ) ? "" : "/r/"+sub;
-// let limitUrl     = "limit=" + limit;
-// let afterUrl     = (after == null) ? "" : "&after="+after;
-// let countUrl     = (count == 0) ? "" : "&count="+count;
-// let url = "https://www.reddit.com" + subUrl + "/" + sortType + "/.json?" + sortUrl + "&" + limitUrl + afterUrl + countUrl;
 
-let ratelimit_remaining = 600;
 const LOG_REQUESTS = JSON.parse(
   process?.env?.NEXT_PUBLIC_ENABLE_API_LOG ?? "false"
 );
-const REDDIT = "https://www.reddit.com";
 
 export const logApiRequest = async (type: Route_Types, isOauth?: boolean) => {
   if (LOG_REQUESTS) {
@@ -46,20 +39,30 @@ const getToken = async () => {
 };
 
 const oauthGet = async (
-  accessToken: string,
+  accessToken: string | undefined,
   method: string,
   config: AxiosRequestConfig<any>
 ) => {
-  const res = await axios.get(`https://oauth.reddit.com${method}`, {
+  // Route through troddit's own server proxy (/api/reddit). The proxy attaches
+  // the user token when supplied, otherwise an app-only token, plus the
+  // required User-Agent. Sending no token here makes the request app-only.
+  const headers: Record<string, any> = { ...(config?.headers ?? {}) };
+  delete headers.authorization;
+  delete headers.Authorization;
+  if (accessToken) headers.authorization = `bearer ${accessToken}`;
+
+  // Strip a trailing slash from the path (not the query) so Next.js doesn't
+  // issue a 308 trailing-slash redirect on our /api/reddit route (permalinks
+  // end in "/"). Operate on the path only so query values ending in "/" survive.
+  const [pathPart, ...queryParts] = method.split("?");
+  const normalized =
+    pathPart.replace(/\/$/, "") +
+    (queryParts.length ? `?${queryParts.join("?")}` : "");
+
+  const res = await axios.get(`/api/reddit${normalized}`, {
     ...config,
-    headers: {
-      ...(config?.headers ?? {}),
-      authorization: `bearer ${accessToken}`,
-    },
+    headers,
   });
-  if (res.headers["x-ratelimit-remaining"] !== undefined) {
-    ratelimit_remaining = parseInt(res.headers["x-ratelimit-remaining"]);
-  }
   return res;
 };
 
@@ -206,7 +209,7 @@ export const loadFront = async ({
     token,
     skipCheck
   );
-  if (loggedIn && accessToken && ratelimit_remaining > 1) {
+  if (loggedIn && accessToken) {
     try {
       logApiRequest("home", true);
       const res1 = await oauthGet(accessToken, `/${sort}`, {
@@ -248,7 +251,7 @@ export const loadFront = async ({
     } else {
       try {
         logApiRequest("home", false);
-        const res = await axios.get(`${REDDIT}/${sort}/.json?`, {
+        const res = await oauthGet(accessToken, `/${sort}`, {
           params: {
             raw_json: 1,
             t: range,
@@ -297,7 +300,7 @@ export const loadSubreddits = async ({
     subreddits?.split("+")?.length > 1 ||
     subreddits?.toUpperCase()?.includes("POPULAR");
 
-  if (loggedIn && accessToken && ratelimit_remaining > 1) {
+  if (loggedIn && accessToken) {
     try {
       logApiRequest("r/", true);
       const res1 = await oauthGet(accessToken,
@@ -330,7 +333,7 @@ export const loadSubreddits = async ({
     try {
       logApiRequest("r/", false);
       const res = await (
-        await axios.get(`${REDDIT}/r/${subreddits}/${sort}/.json?`, {
+        await oauthGet(accessToken, `/r/${subreddits}/${sort}`, {
           params: {
             raw_json: 1,
             t: range,
@@ -378,7 +381,6 @@ export const getRedditSearch = async ({
   } as { q?: string; [x: string]: string | number | boolean };
 
   let oathsearch = `/search`;
-  let noauthsearch = `${REDDIT}/search.json`;
   if (p?.q?.substring(0, 5)?.toUpperCase() === "FLAIR") {
     p.q = p.q.replaceAll(" ", "%2B").replaceAll("+", "%2B");
   }
@@ -388,12 +390,7 @@ export const getRedditSearch = async ({
     p["include_over_18"] = "0";
   }
   if (subreddit) {
-    oathsearch = `/r/${subreddit}/search/.json?q=${
-      p.q
-    }&sort=${sort}&restrict_sr=on&include_over_18=${
-      include_over_18 ? "on" : "0"
-    }&t=${range}&after=${after}`;
-    noauthsearch = `https://www.reddit.com/r/${subreddit}/search/.json?q=${
+    oathsearch = `/r/${subreddit}/search?q=${
       p.q
     }&sort=${sort}&restrict_sr=on&include_over_18=${
       include_over_18 ? "on" : "0"
@@ -418,11 +415,10 @@ export const getRedditSearch = async ({
   }
 
   if (
-    loggedIn &&
-    accessToken &&
-    ratelimit_remaining > 1 &&
+    // Content search (not an sr/user lookup). Run the manual NSFW filter loop
+    // for logged-out users too: the OAuth /search endpoint ignores
+    // include_over_18, so we must filter client-side regardless of login state.
     !searchtype
-    // p["include_over_18"] !== "0" //oath api doesn't respect this setting
   ) {
     try {
       //dealing with oath not respecting including_over_18 parameter
@@ -454,8 +450,7 @@ export const getRedditSearch = async ({
       } while (
         p["include_over_18"] === "0" &&
         after &&
-        children.length < 25 &&
-        ratelimit_remaining > 1
+        children.length < 25
       );
 
       return {
@@ -471,7 +466,7 @@ export const getRedditSearch = async ({
     try {
       logApiRequest("search", false);
       const res = await (
-        await axios.get(noauthsearch, {
+        await oauthGet(accessToken, oathsearch, {
           params: p,
         })
       ).data;
@@ -504,8 +499,9 @@ export const loadSubFlairPosts = async ({
   let f = flair.replaceAll(" ", "%2B").replaceAll("+", "%2B");
   try {
     logApiRequest("search", false);
-    const res = await axios.get(
-      `https://www.reddit.com/r/${subreddit}/search/.json?q=${f}&sort=${sort}&restrict_sr=on&include_over_18=on&t=${range}&after=${after}`,
+    const res = await oauthGet(
+      undefined,
+      `/r/${subreddit}/search?q=${f}&sort=${sort}&restrict_sr=on&include_over_18=on&t=${range}&after=${after}`,
       {
         params: {
           raw_json: 1,
@@ -542,7 +538,7 @@ export const getUserMultiPosts = async ({
   try {
     logApiRequest("u/", false);
     const res = await (
-      await axios.get(`${REDDIT}/user/${user}/m/${multiname}/${sort}/.json?`, {
+      await oauthGet(undefined, `/user/${user}/m/${multiname}/${sort}`, {
         params: {
           raw_json: 1,
           sort: sort,
@@ -564,45 +560,34 @@ export const getUserMultiPosts = async ({
 export const loadSubFlairs = async ({
   subreddit,}: { subreddit: string }) => {
   let token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
-    try {
-      logApiRequest("r/", true);
-      const res = await axios.get(
-        `https://www.reddit.com/r/${subreddit}/api/link_flair_v2.json`,
-        {
-          params: {
-            raw_json: 1,
-          },
-        }
-      );
-      return res;
-    } catch (err) {
-      console.log(err);
-      return false;
-    }
+  try {
+    logApiRequest("r/", true);
+    const res = await oauthGet(token, `/r/${subreddit}/api/link_flair_v2`, {
+      params: {
+        raw_json: 1,
+      },
+    });
+    return res;
+  } catch (err) {
+    console.log(err);
+    return false;
   }
 };
 //oauth request
 export const loadSubInfo = async ({
   subreddit,}: { subreddit: string }) => {
   let token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
-    try {
-      logApiRequest("r/", true);
-      const res = await (
-        await oauthGet(token, `/r/${subreddit}/about`, {
-          headers: {
-            authorization: `bearer ${token}`,
-          },
-          params: {},
-        })
-      ).data;
-      return res;
-    } catch (err) {
-      throw err;
-    }
+  try {
+    logApiRequest("r/", true);
+    const res = await (
+      await oauthGet(token, `/r/${subreddit}/about`, {
+        params: {},
+      })
+    ).data;
+    return res;
+  } catch (err) {
+    throw err;
   }
-  return false;
 };
 //search request no auth required
 export const loadSubredditInfo = async ({
@@ -616,8 +601,9 @@ export const loadSubredditInfo = async ({
       logApiRequest(loadUser ? "u/" : "r/", false);
 
       const res = await (
-        await axios.get(
-          `${REDDIT}/${loadUser ? "user" : "r"}/${query}/about.json`,
+        await oauthGet(
+          undefined,
+          `/${loadUser ? "user" : "r"}/${query}/about`,
           {
             ///search/.json?q=${query}&type=sr&include_over_18=on`, {
             params: {
@@ -646,7 +632,7 @@ export const getWikiContent = async ({
   try {
     logApiRequest("r/", false);
     const content = await (
-      await axios.get(`https://www.reddit.com/r/${wikiquery.join("/")}.json`, {
+      await oauthGet(undefined, `/r/${wikiquery.join("/")}`, {
         params: { raw_json: 1 },
       })
     ).data;
@@ -665,7 +651,7 @@ export const favoriteSub = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch("https://oauth.reddit.com/api/favorite", {
@@ -694,7 +680,7 @@ export const subToSub = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       //console.log(dir, id, token);
       let skip_initial_defaults = 1;
@@ -758,10 +744,11 @@ export const loadUserPosts = async ({
     } else {
       logApiRequest("u/", false);
       res = await (
-        await axios.get(
-          `${REDDIT}/user/${username}/${
+        await oauthGet(
+          accessToken,
+          `/user/${username}/${
             type ? type.toLowerCase() : ""
-          }.json?sort=${sort}`,
+          }?sort=${sort}`,
           {
             params: {
               raw_json: 1,
@@ -810,7 +797,7 @@ export const loadUserSelf = async ({
     accessToken = await returnToken?.accessToken;
   }
 
-  if (loggedIn && accessToken && ratelimit_remaining > 1) {
+  if (loggedIn && accessToken) {
     try {
       logApiRequest("u/", true);
       const res = await oauthGet(accessToken,
@@ -855,7 +842,7 @@ export const getSubreddits = async ({
 }) => {
   try {
     logApiRequest("r/", false);
-    let res = await axios.get(`${REDDIT}/subreddits/${type}.json`, {
+    let res = await oauthGet(undefined, `/subreddits/${type}`, {
       params: { after: after, raw_json: 1, include_over_18: 1 },
     });
     let data = await res.data;
@@ -874,7 +861,7 @@ export const getMySubs = async ({
   count?: boolean;
 }) => {
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       let res = await oauthGet(token, "/subreddits/mine/subscriber", {
@@ -906,7 +893,7 @@ export const getAllMyFollows = async () => {
   const token = await (await getToken())?.accessToken;
   let done = false;
   while (!done) {
-    if (token && ratelimit_remaining > 1) {
+    if (token) {
       try {
         logApiRequest("cud", true);
         let res = await oauthGet(token,
@@ -969,7 +956,7 @@ export const getUserMultiSubs = async ({
   multi: string;
 }) => {
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await oauthGet(token,
@@ -996,7 +983,7 @@ export const getUserMultiSubs = async ({
 export const getMyMultis = async () => {
   const token = await (await getToken())?.accessToken;
   //console.log(token);
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       let res = await oauthGet(token, "/api/multi/mine", {
@@ -1012,7 +999,6 @@ export const getMyMultis = async () => {
       throw err;
     }
   } else {
-    //console.log(ratelimit_remaining, 'huh');
   }
 };
 
@@ -1026,11 +1012,11 @@ export const addToMulti = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch(
-        `/api/reddit/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
+        `/api/reddit/api/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
           `{"name":"${srname}"}`
         )}`,
         {
@@ -1056,11 +1042,11 @@ export const deleteFromMulti = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch(
-        `/api/reddit/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
+        `/api/reddit/api/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
           `{"name":"${srname}"}`
         )}`,
         {
@@ -1109,10 +1095,10 @@ export const createMulti = async ({
   });
   const json = `{"description":"","display_name":"${display_name}","icon_img":"https://www.redditstatic.com/custom_feeds/custom_feed_default_4.png", "subreddits": [${subreddits}], "visibility":"${visibility}"}`;
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
-      const uri = `/multi/user/${user}/m/${display_name}/?model=${encodeURIComponent(
+      const uri = `/api/multi/user/${user}/m/${display_name}/?model=${encodeURIComponent(
         json
       )}`;
       const res = await fetch(`/api/reddit${uri}`, {
@@ -1133,7 +1119,7 @@ export const deleteMulti = async ({
 }: { multiname: string; username: string }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch(
@@ -1169,7 +1155,7 @@ export const searchSubreddits = async ({
     returnToken = await getToken();
     accessToken = await returnToken?.accessToken;
   }
-  if (loggedIn && accessToken && ratelimit_remaining > 1) {
+  if (loggedIn && accessToken) {
     try {
       logApiRequest("search", true);
       let res = await oauthGet(accessToken,
@@ -1195,7 +1181,7 @@ export const searchSubreddits = async ({
     try {
       logApiRequest("search", false);
       const res = await (
-        await axios.get(`${REDDIT}/search/.json?q=${query}&type=sr`, {
+        await oauthGet(undefined, `/search?q=${query}&type=sr`, {
           params: {
             raw_json: 1,
           },
@@ -1221,7 +1207,7 @@ export const loadComments = async ({
     //console.log(permalink);
     logApiRequest("thread", false);
     const res = await (
-      await axios.get(`${REDDIT}${permalink}.json?sort=${sort}`, {
+      await oauthGet(undefined, `${permalink}?sort=${sort}`, {
         params: {
           raw_json: 1,
         },
@@ -1251,7 +1237,7 @@ export const loadMoreComments = async ({
   id?: string;
 } & RedditSessionPropsType) => {
   let { returnToken, accessToken } = await checkToken(loggedIn, token);
-  if (accessToken && ratelimit_remaining > 1) {
+  if (accessToken) {
     try {
       logApiRequest("thread", true);
       const res = await fetch(`https://oauth.reddit.com/api/morechildren`, {
@@ -1269,9 +1255,10 @@ export const loadMoreComments = async ({
       return undefined;
     }
   } else {
+    if (!permalink) return { data: undefined, token: returnToken };
     logApiRequest("thread", false);
     const res = await (
-      await axios.get(`${REDDIT}${permalink}.json`, {
+      await oauthGet(accessToken, `${permalink}`, {
         params: { raw_json: 1, profile_img: true },
       })
     ).data;
@@ -1301,14 +1288,14 @@ export const loadPost = async ({
     returnToken = await getToken();
     accessToken = await returnToken?.accessToken;
   }
-  if (loggedIn && accessToken && ratelimit_remaining > 1) {
+  if (loggedIn && accessToken) {
     let path = permalink;
     //handle direct link case
     if (!permalink.includes("/comments/")) {
       try {
         logApiRequest("thread", false);
         const res = await (
-          await axios.get(`${REDDIT}${permalink}.json?sort=${sort}`, {
+          await oauthGet(accessToken, `${permalink}?sort=${sort}`, {
             params: { raw_json: 1, profile_img: true, sr_detail: withDetail },
           })
         ).data;
@@ -1351,7 +1338,7 @@ export const loadPost = async ({
     try {
       logApiRequest("thread", false);
       const res = await (
-        await axios.get(`${REDDIT}${permalink}.json?sort=${sort}`, {
+        await oauthGet(accessToken, `${permalink}?sort=${sort}`, {
           params: {
             raw_json: 1,
             profile_img: true,
@@ -1399,7 +1386,7 @@ export const saveLink = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch(
@@ -1434,7 +1421,7 @@ export const hideLink = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch(
@@ -1467,7 +1454,7 @@ export const postVote = async ({
 }: { dir: number; id: string }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     logApiRequest("cud", true);
     const res = await fetch("https://oauth.reddit.com/api/vote", {
       method: "POST",
@@ -1495,7 +1482,7 @@ export const postComment = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch("https://oauth.reddit.com/api/comment", {
@@ -1532,7 +1519,7 @@ export const editUserText = async ({
 }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch("https://oauth.reddit.com/api/editusertext", {
@@ -1565,7 +1552,7 @@ export const deleteLink = async ({
   id,}: { id: string }) => {
   
   const token = await (await getToken())?.accessToken;
-  if (token && ratelimit_remaining > 1) {
+  if (token) {
     try {
       logApiRequest("cud", true);
       const res = await fetch("https://oauth.reddit.com/api/del", {
