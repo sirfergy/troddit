@@ -271,6 +271,9 @@ html,
 body {
   max-width: 100%;
   overflow: var(--overflow);
+  /* Replace the browser's native vertical overscroll (iOS rubber-band /
+     Chrome Android pull-to-refresh, which would reload the SPA) with our own. */
+  overscroll-behavior-y: none;
 }
 .sticky-box {
   position: -webkit-sticky; /* for Safari */
