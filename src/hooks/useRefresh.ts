@@ -17,7 +17,7 @@ const useRefresh = () => {
     updateFeedKey && context.setProgressKey((p) => p + 1);
   };
   const refreshCurrent = () => {
-    queryClient.refetchQueries(key)
+    return queryClient.refetchQueries(key);
   }
   const fetchingCount = useIsFetching(key);
   

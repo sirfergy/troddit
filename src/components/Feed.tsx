@@ -6,6 +6,7 @@ import LoginModal from "./LoginModal";
 import { ErrorBoundary } from "react-error-boundary";
 import useFeed from "../hooks/useFeed";
 import useRefresh from "../hooks/useRefresh";
+import usePullToRefresh from "../hooks/usePullToRefresh";
 import { IoMdRefresh } from "react-icons/io";
 import ErrMessage from "./ErrMessage";
 import useLocation from "../hooks/useLocation";
@@ -23,6 +24,11 @@ const Feed = ({ initialData = {} as any }) => {
 
   const context: any = useMainContext();
   const router = useRouter();
+
+  const { pullDistance, refreshing } = usePullToRefresh({
+    onRefresh: refreshCurrent,
+    disabled: context.mediaMode || context.postOpen || feed.isFetching,
+  });
 
   useEffect(() => {
     if (
@@ -82,6 +88,32 @@ const Feed = ({ initialData = {} as any }) => {
   }
   return (
     <>
+      <div
+        aria-hidden="true"
+        className="fixed left-0 z-40 flex justify-center w-screen pointer-events-none top-12 md:hidden"
+        style={{
+          transform: `translateY(${pullDistance}px)`,
+          opacity:
+            refreshing || pullDistance > 0
+              ? Math.min(1, pullDistance / 70 + (refreshing ? 1 : 0))
+              : 0,
+          transition: pullDistance === 0 ? "transform 0.2s, opacity 0.2s" : "none",
+        }}
+      >
+        <div className="p-2 mt-2 border rounded-full shadow-md bg-th-background2 border-th-border2">
+          <IoMdRefresh
+            className={
+              "w-6 h-6 text-th-accent " +
+              (refreshing ? "animate-spin" : "")
+            }
+            style={
+              refreshing
+                ? undefined
+                : { transform: `rotate(${Math.min(360, pullDistance * 3)}deg)` }
+            }
+          />
+        </div>
+      </div>
       <LoginModal />
       <div className="flex flex-col items-center flex-none w-screen pt-1">
         <div
