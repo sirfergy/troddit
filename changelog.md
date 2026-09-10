@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixes
+- Reset cancelled full-screen media swipes so posts do not remain partially off-screen.
+
 ## v0.21.0
 ### New
 - Option to automatically expand images in threads
