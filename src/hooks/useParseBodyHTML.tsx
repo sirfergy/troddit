@@ -20,7 +20,6 @@ const processingInstructions = [
         node.parent &&
         node.parent.name &&
         node.parent.name === "a" &&
-        node.parent?.attribs?.href?.includes("https://") &&
         checkSupport(node.parent?.attribs?.href, node) &&
         node.name !== "img"; //leave comment gifs alone
       return check;
