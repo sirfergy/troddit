@@ -131,6 +131,22 @@ const MediaModal = ({
     }
   };
 
+  const resetTouchState = () => {
+    touchStartY[0] = undefined;
+    touchStartX[0] = undefined;
+    touchEndY[0] = undefined;
+    touchEndX[0] = undefined;
+    touchStartTime[0] = Infinity;
+    translateMode[0] = "";
+  };
+
+  const handleTouchCancel = () => {
+    resetTouchState();
+    setHideArrows(false);
+    updateTranslate(-1 * curPostNum * windowHeight);
+    updateTranslateX(0);
+  };
+
   const handleTouchEnd = (e) => {
     const now = new Date().getTime();
     if (translateMode[0] == "hor") {
@@ -177,12 +193,7 @@ const MediaModal = ({
       updateTranslate(-1 * curPostNum * windowHeight);
       updateTranslateX(0);
     }
-    touchEndY[0] = undefined;
-    touchStartTime[0] = Infinity;
-    touchStartY[0] = undefined;
-    touchStartX[0] = undefined;
-    touchEndY[0] = undefined;
-    translateMode[0] = "";
+    resetTouchState();
   };
   const handleTouchMove = (e) => {
     if (e.targetTouches.length < 2) {
@@ -363,6 +374,10 @@ const MediaModal = ({
         onTouchEnd={(e) =>
           !flattenedPosts[curPostNum]?.data?.mediaInfo?.isSelf &&
           handleTouchEnd(e)
+        }
+        onTouchCancel={() =>
+          !flattenedPosts[curPostNum]?.data?.mediaInfo?.isSelf &&
+          handleTouchCancel()
         }
         onDoubleClick={(e) => {
           e.preventDefault();
