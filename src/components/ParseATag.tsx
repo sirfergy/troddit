@@ -1,26 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
-import Image from "next/legacy/image";
 import React, { useEffect, useState } from "react";
 import { CgArrowsExpandDownRight, CgArrowsExpandUpLeft } from "react-icons/cg";
 import { useMainContext } from "../MainContext";
-import { isExpandableImageLink } from "../../lib/imageLinks";
+import { getExpandableImageUrl } from "../../lib/imageLinks";
 
 const ParseATag = (props) => {
   const context: any = useMainContext();
-  const [link, setLink] = useState("");
-  const [expandable, setExpandable] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>();
   const [expand, setExpand] = useState(context.expandImages);
   const [linkText, setLinkText] = useState(props?.children?.data);
   useEffect(() => {
-    const checkSupport = (link: string) => {
-      //prevent recurring nodes from all having expansion buttons
-      if(props?.children?.next?.parent?.attribs?.href === link){
-        return false;
-      }
-
-      return isExpandableImageLink(link);
-    };
-
     //todo: preserve text formatting
     const findLinkText = (data, iter = 0) => {
       if (iter > 5) {
@@ -37,18 +26,20 @@ const ParseATag = (props) => {
 
     const link = props?.children?.parent?.attribs?.href;
     findLinkText(props?.children);
-    setLink(link);
-    setExpandable(checkSupport(link));
+    //prevent recurring nodes from all having expansion buttons
+    if (props?.children?.next?.parent?.attribs?.href !== link) {
+      setImageUrl(getExpandableImageUrl(link));
+    }
   }, []);
 
   const handleClick = async (e) => {
-    if (expandable) {
+    if (imageUrl) {
       e.preventDefault();
       e.stopPropagation();
       setExpand((e) => !e);
     }
   };
-  if (!expandable) {
+  if (!imageUrl) {
     return <>{linkText}</>;
   }
 
@@ -56,21 +47,19 @@ const ParseATag = (props) => {
     <>
       <>
         {linkText}
-        {expandable && (
-          <button
-            onClick={handleClick}
-            aria-label="expand"
-            className={
-              "flex-row items-center h-6 px-1 space-x-1 border rounded-md border-th-border hover:border-th-borderHighlight  text-th-text inline-block mx-1.5"
-            }
-          >
-            {expand ? (
-              <CgArrowsExpandUpLeft className="flex-none w-4 h-4" />
-            ) : (
-              <CgArrowsExpandDownRight className="flex-none w-4 h-4" />
-            )}
-          </button>
-        )}
+        <button
+          onClick={handleClick}
+          aria-label="expand"
+          className={
+            "flex-row items-center h-6 px-1 space-x-1 border rounded-md border-th-border hover:border-th-borderHighlight  text-th-text inline-block mx-1.5"
+          }
+        >
+          {expand ? (
+            <CgArrowsExpandUpLeft className="flex-none w-4 h-4" />
+          ) : (
+            <CgArrowsExpandDownRight className="flex-none w-4 h-4" />
+          )}
+        </button>
       </>
       {expand && (
         <div
@@ -80,7 +69,7 @@ const ParseATag = (props) => {
             e.stopPropagation();
           }}
         >
-          <img className="max-h-[60vh] mx-auto py-0 my-0" src={link} alt="" />
+          <img className="max-h-[60vh] mx-auto py-0 my-0" src={imageUrl} alt="" />
         </div>
       )}
     </>
