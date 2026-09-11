@@ -4,6 +4,8 @@ import { BsBookmarks, BsBookmarksFill } from "react-icons/bs";
 import { useKeyPress } from "../hooks/KeyPress";
 import useMutate from "../hooks/useMutate";
 import { useMainContext } from "../MainContext";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { postActionKey } from "../../lib/feedActions";
 const SaveButton = ({
   id,
   saved,
@@ -23,19 +25,20 @@ const SaveButton = ({
   const aPress = useKeyPress("s");
 
   useEffect(() => {
-    saved && setIsSaved(true);
-    return () => {
-      setIsSaved(false);
-    };
+    setIsSaved(!!saved);
   }, [saved, id]);
 
-  const { saveMutation } = useMutate();
+  const { saveMutation } = useMutate(id);
+  const queryClient = useQueryClient();
+  const mutationKey = postActionKey("save", id);
+  const pending = useIsMutating({ mutationKey }) > 0;
 
   useEffect(() => {
-    setIsSaved(saved);
-  }, [saveMutation.isError]);
+    if (saveMutation.isError) setIsSaved(!!saved);
+  }, [saveMutation.isError, saved, id]);
 
   const save = async () => {
+    if (queryClient.isMutating({ mutationKey })) return;
     if (session) {
       setIsSaved((s) => !s);
       saveMutation.mutate({ id: id, isSaved: isSaved });
@@ -63,10 +66,12 @@ const SaveButton = ({
 
   return (
     <button
+      type="button"
+      disabled={pending}
       title={`save ${useKeys ? "(s)" : ""}`}
       aria-label="save"
       className={
-        "flex flex-row items-center outline-none  " +
+        "flex flex-row items-center outline-none disabled:opacity-50 disabled:cursor-wait " +
         (menu
           ? " pl-2 pr-4 py-2.5  md:py-1 w-full "
           : row

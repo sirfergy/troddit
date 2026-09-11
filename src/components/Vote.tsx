@@ -119,11 +119,7 @@ const Vote = ({
               !archived ? `upvote ${postMode ? "(a)" : ""}` : "archived"
             }`}
             className={
-              (liked === 1
-                ? " text-th-upvote "
-                : liked === -1
-                ? " opacity-50 "
-                : "") +
+              (liked === -1 ? " opacity-50 " : "") +
               ` flex-none w-${size} h-${size} ${
                 !archived && !loading
                   ? "cursor-pointer  hover:text-th-upvote hover:scale-110 hover:opacity-100"

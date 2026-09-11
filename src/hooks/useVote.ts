@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useMutate from "./useMutate";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { postActionKey, voteValue } from "../../lib/feedActions";
+import type { VoteValue } from "../../lib/feedActions";
 interface VoteArgs {
   name: string;
   likes: number | boolean;
@@ -19,9 +22,12 @@ const calculateScore = (x: number) => {
 };
 
 const useVote = ({ name, likes, score, postTime, scoreHideMins }: VoteArgs) => {
-  const { voteMutation } = useMutate();
+  const { voteMutation } = useMutate(name);
+  const queryClient = useQueryClient();
+  const mutationKey = postActionKey("vote", name);
+  const pending = useIsMutating({ mutationKey }) > 0;
   const [voteScore, setVoteScore] = useState<number>(score);
-  const [liked, setLiked] = useState<number | undefined>();
+  const [liked, setLiked] = useState<VoteValue>(() => voteValue(likes));
 
   const voteDisplay = useMemo(() => {
     let display = calculateScore(voteScore) ?? "0";
@@ -35,34 +41,22 @@ const useVote = ({ name, likes, score, postTime, scoreHideMins }: VoteArgs) => {
   }, [voteScore, postTime, scoreHideMins]);
 
   useEffect(() => {
-    setLiked(() => {
-      if (likes === 1 || likes === true) return 1;
-      if (likes === false || likes === -1) return -1;
-      return undefined;
-    });
-    //update like changes or revert if theres an error liking
-  }, [likes, voteMutation.isError]);
+    setLiked(voteValue(likes));
+    setVoteScore(score);
+  }, [name, likes, score]);
 
-  const castVote = async (v) => {
-    let postv;
-    if (v === liked) {
-      postv = 0;
-    } else if (v === 1) {
-      postv = 1;
-    } else if (v === -1) {
-      postv = -1;
+  useEffect(() => {
+    if (voteMutation.isError) {
+      setLiked(voteValue(likes));
+      setVoteScore(score);
     }
-    let increment =
-      postv === 0
-        ? liked === 1
-          ? -1
-          : 1
-        : postv === 1
-        ? liked === -1
-          ? 2
-          : 1
-        : postv === -1 ? (liked === 1 ? -2 : -1) : 0;
-    setLiked(postv === 1 ? 1 : postv === -1 ? -1 : undefined);
+  }, [voteMutation.isError, name, likes, score]);
+
+  const castVote = async (v: -1 | 1) => {
+    if (queryClient.isMutating({ mutationKey })) return;
+    const postv = v === liked ? 0 : v;
+    const increment = postv - liked;
+    setLiked(postv);
     setVoteScore((v) => v + increment);
     voteMutation.mutate({ vote: postv, id: name, increment: increment });
   };
@@ -71,7 +65,7 @@ const useVote = ({ name, likes, score, postTime, scoreHideMins }: VoteArgs) => {
     voteDisplay,
     castVote,
     liked,
-    loading: voteMutation.isLoading,
+    loading: pending,
   };
 };
 
