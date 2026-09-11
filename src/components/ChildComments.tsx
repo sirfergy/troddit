@@ -152,7 +152,7 @@ const ChildComments = ({
       } else {
         count += 1;
       }
-      for (let i = 0; i < c?.data?.replies?.data?.children?.length ?? 0; i++) {
+      for (let i = 0; i < (c?.data?.replies?.data?.children?.length ?? 0); i++) {
         counter(c?.data?.replies?.data?.children[i]);
       }
     };

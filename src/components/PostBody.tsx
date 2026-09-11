@@ -35,13 +35,13 @@ const PostBody = ({
   const { theme, resolvedTheme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
   const [heightLimited, setHeightLimited] = useState(
-    () => !!limitHeight ?? false
+    () => !!limitHeight
   );
   useEffect(() => {
     setHeightLimited(!!limitHeight);
   }, [limitHeight]);
   const [hiddenText, setHiddenText] = useState(false);
-  const [hideText, setHideText] = useState(() => !!limitHeight ?? false);
+  const [hideText, setHideText] = useState(() => !!limitHeight);
   useEffect(() => {
     let cRef = ref.current;
     const checkIsTextHidden = () => {

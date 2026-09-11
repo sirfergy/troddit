@@ -566,7 +566,7 @@ const Thread = ({
                       <a
                         className={" text-xl font-semibold mr-2"}
                         href={
-                          `${post?.url}` ??
+                          post?.url ??
                           `https://www.reddit.com${post?.permalink ?? ""}`
                         }
                         target="_blank"
@@ -824,7 +824,7 @@ const Thread = ({
                         </div>
                         <a
                           href={
-                            `${post?.url}` ??
+                            post?.url ??
                             `https://www.reddit.com${post?.permalink ?? ""}`
                           }
                           target="_blank"
