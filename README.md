@@ -46,7 +46,9 @@ Shown in single column mode with wide UI disabled. Sort options menu is open.
 - View posts in single column, custom multi-column with a grid-masonry layout, or a simple row mode. All with infinite-scrolling.
 - Choose your card style: Original for full post text in card, Compact to exclude post text, or Media to hide all text and card padding.
 - Gallery view: Click on a post and navigate through the feed with on screen buttons or your arrow keys. Shows the post content as well as its comments from Reddit. Smart portrait mode to automatically arrange vertical photos and videos side by side with comments.
-- Expand HTTPS image links and Giphy GIF page links inline in posts and comments, or enable automatic expansion in settings.
+- Expand HTTPS images, Giphy GIF pages, direct videos (MP4, M4V, WebM, OGV, MOV), Tenor GIF pages, and Imgur albums/gallery posts inline in posts and comments.
+  - The automatic image-expansion setting still applies only to images. Direct videos and provider embeds load only after expanding; direct videos use native controls and do not autoplay.
+  - Previews keep the original link available. Unsupported video formats/codecs or unavailable provider content can still be opened at the source.
 - Hover mouse over Reddit videos to play. Enable to Autoplay option to play videos automatically when entering the viewport. Enable the Audio option to play sound on hover as well.
 - Responsive desktop and mobile layouts.
 - PWA to download to your computer or phone.
@@ -66,7 +68,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 To contribute create a branch and submit a PR!
 
-Run `npm test` with Node.js 24 or newer for the inline image-link tests, and `npm run lint` and `npm run build` for the application checks.
+Run `npm test` with Node.js 24 or newer for the regression tests. Run `npm run typecheck` to check all TypeScript sources under `src/`, `lib/`, and `types/`, and `npm run lint` and `npm run build` for the application checks.
 
 ### Environment Variables
 
