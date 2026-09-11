@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useMainContext } from "../MainContext";
+import { useAppUpdates } from "../AppUpdates";
 
 export const useKeyPress = (targetKey) => {
   const context: any = useMainContext();
+  const { isOpen: updatesOpen } = useAppUpdates();
   // State for keeping track of whether key is pressed
   const [keyPressed, setKeyPressed] = useState<boolean>(false);
   // If pressed key is our target key then set to true
@@ -19,9 +21,11 @@ export const useKeyPress = (targetKey) => {
   };
   // Add event listeners
   useEffect(() => {
-    if (!context.replyFocus) {
+    if (!context.replyFocus && !updatesOpen) {
       window.addEventListener("keydown", downHandler);
       window.addEventListener("keyup", upHandler);
+    } else {
+      setKeyPressed(false);
     }
 
     // Remove event listeners on cleanup
@@ -29,6 +33,6 @@ export const useKeyPress = (targetKey) => {
       window.removeEventListener("keydown", downHandler);
       window.removeEventListener("keyup", upHandler);
     };
-  }, [context.replyFocus]); // Ensures that effect is only run when a textfield is not in focus
+  }, [context.replyFocus, updatesOpen]);
   return keyPressed;
 };

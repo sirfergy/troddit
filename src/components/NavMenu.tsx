@@ -6,6 +6,7 @@ import { useMainContext } from "../MainContext";
 import Toggles from "./settings/Toggles";
 import { useWindowWidth } from "@react-hook/window-size/throttled";
 import { useSession, signOut } from "next-auth/react";
+import { useAppUpdates } from "../AppUpdates";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -15,6 +16,7 @@ const subOptionStyle =
   "px-4 py-3 text-sm hover:bg-th-highlight  cursor-pointer";
 
 const NavMenu = ({ hide = false }) => {
+  const { openUpdates, updateAvailable } = useAppUpdates();
   const context: any = useMainContext();
   const { data: session } = useSession();
   const [touched, setTouched] = useState(false);
@@ -76,12 +78,13 @@ const NavMenu = ({ hide = false }) => {
     >
       <div className="flex-grow w-full">
         <Menu.Button
-          aria-label="options"
+          aria-label={updateAvailable ? "options, app update available" : "options"}
           title={"options"}
           name="Options"
-          className="flex flex-row items-center justify-center w-full h-full border border-transparent rounded-md hover:border-th-border focus:outline-none"
+          className="relative flex flex-row items-center justify-center w-full h-full border border-transparent rounded-md hover:border-th-border focus:outline-none"
         >
           <BsThreeDotsVertical className="flex-none w-5 h-5" />
+          {updateAvailable && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-th-accent" aria-hidden="true" />}
         </Menu.Button>
       </div>
 
@@ -410,6 +413,18 @@ const NavMenu = ({ hide = false }) => {
                     
                   </Link>
                 </div>
+              )}
+            </Menu.Item>
+            <div role="separator" className="my-1 border-t border-th-border" />
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  type="button"
+                  className={classNames(active ? "bg-th-highlight" : "", "block w-full px-4 py-3 text-sm")}
+                  onClick={(event) => { event.stopPropagation(); openUpdates(); }}
+                >
+                  {updateAvailable ? "App updates (available)" : "App updates"}
+                </button>
               )}
             </Menu.Item>
             <Menu.Item>

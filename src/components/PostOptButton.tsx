@@ -15,6 +15,7 @@ import useFilterSubs from "../hooks/useFilterSubs";
 import { useRead } from "../hooks/useRead";
 import Checkbox from "./ui/Checkbox";
 import SubButton from "./SubButton";
+import { useAppUpdates } from "../AppUpdates";
 
 const MyLink = (props) => {
   let { href, children, ...rest } = props;
@@ -40,6 +41,7 @@ const PostOptButton = ({
   setShowUI,
   buttonStyles = "",
 }: Props) => {
+  const { openUpdates, updateAvailable } = useAppUpdates();
   const context: any = useMainContext();
   const { addSubFilter, addUserFilter } = useFilterSubs();
   const filterMenuRef = useRef<HTMLButtonElement>(null);
@@ -366,6 +368,22 @@ const PostOptButton = ({
                     </div>
                   )}
                 </Menu.Item>
+                {(mode === "post" || mode === "fullmedia") && (
+                  <>
+                    <div role="separator" className="my-1 border-t border-th-border" />
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={(active ? "bg-th-highlight " : "") + "w-full px-2 py-3 text-sm text-left"}
+                          onClick={(event) => { event.stopPropagation(); openUpdates(); }}
+                        >
+                          {updateAvailable ? "App updates (available)" : "App updates"}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </>
+                )}
               </Menu.Items>
             </Transition>
           </>

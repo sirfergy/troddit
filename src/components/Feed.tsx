@@ -13,6 +13,7 @@ import useLocation from "../hooks/useLocation";
 import toast from "react-hot-toast";
 import ToastCustom from "./toast/ToastCustom";
 import FeedMasonry from "./FeedMasonry";
+import { useAppUpdates } from "../AppUpdates";
 
 const Feed = ({ initialData = {} as any }) => {
   const { mode, subreddits } = useLocation();
@@ -23,11 +24,12 @@ const Feed = ({ initialData = {} as any }) => {
     useRefresh();
 
   const context: any = useMainContext();
+  const { isOpen: updatesOpen } = useAppUpdates();
   const router = useRouter();
 
   const { pullDistance, refreshing } = usePullToRefresh({
     onRefresh: refreshCurrent,
-    disabled: context.mediaMode || context.postOpen || feed.isFetching,
+    disabled: context.mediaMode || context.postOpen || feed.isFetching || updatesOpen,
   });
 
   useEffect(() => {

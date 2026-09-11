@@ -8,6 +8,7 @@ import Thread from "./Thread";
 import useFeedGallery from "../hooks/useFeedGallery";
 import MediaModal from "./MediaModal";
 import { BiPlay, BiPause } from "react-icons/bi";
+import { useAppUpdates } from "../AppUpdates";
 
 import PostOptButton from "./PostOptButton";
 import useGlobalState from "../hooks/useGlobalState";
@@ -33,6 +34,7 @@ const PostModal = ({
 }) => {
   const router = useRouter();
   const context: any = useMainContext();
+  const { isOpen: updatesOpen } = useAppUpdates();
   const { getFeedData, setFeedData } = useFeedGallery();
   // const [flattenedPosts, setFlattenedPosts] = useState(
   //   () => getFeedData() as any[]
@@ -302,7 +304,7 @@ const PostModal = ({
   const fPress = useKeyPress("f");
 
   useEffect(() => {
-    if (!context.replyFocus) {
+    if (!context.replyFocus && !updatesOpen) {
       if (nextPress) {
         changePost(1);
       } else if (backPress) {
@@ -330,6 +332,7 @@ const PostModal = ({
     downPress,
     escapePress,
     context.replyFocus,
+    updatesOpen,
   ]);
 
   const translateDiv = useRef<HTMLDivElement>(null);
