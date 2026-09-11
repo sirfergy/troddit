@@ -3,10 +3,11 @@ import { useTheme } from "next-themes";
 import React, { useEffect, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import useParseBodyHTML from "../hooks/useParseBodyHTML";
+import { recordRenderError } from "../diagnostics/runtime";
 
 const ErrorFallBack = () => {
   return (
-    <div className="text-sm text-th-red">
+    <div data-troddit-render-error className="text-sm text-th-red">
       {"<troddit encountered an issue rendering this text>"}
     </div>
   );
@@ -42,7 +43,7 @@ const ParseBodyHTML = ({
     return <></>;
   }
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallBack}>
+    <ErrorBoundary FallbackComponent={ErrorFallBack} onError={(error) => recordRenderError("post-body", error)}>
       <div
         ref={ref}
         id="innerhtml"

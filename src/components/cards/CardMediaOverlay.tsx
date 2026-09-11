@@ -54,6 +54,7 @@ const CardMediaOverlay = ({ post, voteScore, setShowCardMediaOverlay }) => {
 
   return (
     <div
+      data-troddit-overlay="peek"
       className="fixed inset-0 z-[999] bg-black/40"
       onContextMenuCapture={(e) => {
         if (windowWidth < 640) {

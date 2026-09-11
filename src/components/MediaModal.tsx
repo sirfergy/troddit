@@ -118,6 +118,8 @@ const MediaModal = ({
         "transform",
         `translate3d(0px, ${x}px,${0}px)`
       );
+      translateDiv.current.dataset.trodditMotionAt = String(performance.now());
+      translateDiv.current.dataset.trodditWriterHeight = String(windowHeight);
     }
   };
   // const [animateY, setAnimateY] = useState(false);
@@ -362,6 +364,9 @@ const MediaModal = ({
       )}
       <div
         ref={translateDiv}
+        data-troddit-media-rail
+        data-troddit-index={curPostNum}
+        data-troddit-zoom={scale}
         className={"absolute top-0 left-0 "}
         onTouchStart={(e) =>
           !flattenedPosts[curPostNum]?.data?.mediaInfo?.isSelf &&

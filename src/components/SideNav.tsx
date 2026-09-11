@@ -64,6 +64,7 @@ const SideNav = ({ visible, toggle }) => {
     // onTouchEnd={(e) => handleTouchEnd(e)}
     >
       <div
+        data-troddit-overlay={visible ? "navigation" : undefined}
         className={
           "absolute h-[100dvh] inset-y-0 left-0  space-y-6 z-[99] transition duration-200 ease-in-out transform -translate-x-full sidebar py-7" +
           `${visible ? "relative translate-x-0 w-screen" : ""}`

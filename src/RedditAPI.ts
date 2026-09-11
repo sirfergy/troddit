@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { getSession } from "next-auth/react";
 import type { Route_Types } from "../types/logs";
+import { diagnosticFetch, diagnosticRequest } from "./diagnostics/runtime";
 
 const LOG_REQUESTS = JSON.parse(
   process?.env?.NEXT_PUBLIC_ENABLE_API_LOG ?? "false"
@@ -24,7 +25,7 @@ const getToken = async () => {
   const session = await getSession();
   if (session) {
     try {
-      let tokendata = await (await axios.get("/api/reddit/mytoken")).data;
+      let tokendata = (await diagnosticRequest("account", "GET", () => axios.get("/api/reddit/mytoken"))).data;
       return {
         accessToken: tokendata.data.accessToken,
         refreshToken: tokendata.data.refreshToken,
@@ -59,10 +60,10 @@ const oauthGet = async (
     pathPart.replace(/\/$/, "") +
     (queryParts.length ? `?${queryParts.join("?")}` : "");
 
-  const res = await axios.get(`/api/reddit${normalized}`, {
+  const res = await diagnosticRequest("read", "GET", () => axios.get(`/api/reddit${normalized}`, {
     ...config,
     headers,
-  });
+  }));
   return res;
 };
 
@@ -654,7 +655,7 @@ export const favoriteSub = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch("https://oauth.reddit.com/api/favorite", {
+      const res = await diagnosticFetch("subscription", "https://oauth.reddit.com/api/favorite", {
         method: "POST",
         headers: {
           Authorization: `bearer ${token}`,
@@ -687,7 +688,7 @@ export const subToSub = async ({
       let action_source = "o";
       if (action == "unsub") skip_initial_defaults = 0;
       logApiRequest("cud", true);
-      const res = await fetch("https://oauth.reddit.com/api/subscribe", {
+      const res = await diagnosticFetch("subscription", "https://oauth.reddit.com/api/subscribe", {
         method: "POST",
         headers: {
           Authorization: `bearer ${token}`,
@@ -1015,7 +1016,7 @@ export const addToMulti = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch(
+      const res = await diagnosticFetch("multi",
         `/api/reddit/api/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
           `{"name":"${srname}"}`
         )}`,
@@ -1045,7 +1046,7 @@ export const deleteFromMulti = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch(
+      const res = await diagnosticFetch("multi",
         `/api/reddit/api/multi/user/${user}/m/${multi}/r/${srname}?model=${encodeURIComponent(
           `{"name":"${srname}"}`
         )}`,
@@ -1101,7 +1102,7 @@ export const createMulti = async ({
       const uri = `/api/multi/user/${user}/m/${display_name}/?model=${encodeURIComponent(
         json
       )}`;
-      const res = await fetch(`/api/reddit${uri}`, {
+      const res = await diagnosticFetch("multi", `/api/reddit${uri}`, {
         method: "PUT",
         headers: {
           Authorization: `bearer ${token}`,
@@ -1122,7 +1123,7 @@ export const deleteMulti = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch(
+      const res = await diagnosticFetch("multi",
         `https://oauth.reddit.com/api/multi/user/${username}/m/${multiname}/`,
         {
           method: "DELETE",
@@ -1240,7 +1241,7 @@ export const loadMoreComments = async ({
   if (accessToken) {
     try {
       logApiRequest("thread", true);
-      const res = await fetch(`https://oauth.reddit.com/api/morechildren`, {
+      const res = await diagnosticFetch("thread", `https://oauth.reddit.com/api/morechildren`, {
         method: "POST",
         headers: {
           Authorization: `bearer ${accessToken}`,
@@ -1366,11 +1367,11 @@ export const getMyID = async () => {
   const token = await (await getToken())?.accessToken;
   try {
     logApiRequest("cud", true);
-    const res = await axios.get("https://oauth.reddit.com/api/v1/me", {
+    const res = await diagnosticRequest("account", "GET", () => axios.get("https://oauth.reddit.com/api/v1/me", {
       headers: {
         authorization: `bearer ${token}`,
       },
-    });
+    }));
   } catch (err) {
     console.log(err);
   }
@@ -1389,7 +1390,7 @@ export const saveLink = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch(
+      const res = await diagnosticFetch("save",
         `https://oauth.reddit.com/api/${isSaved ? "unsave" : "save"}`,
         {
           method: "POST",
@@ -1424,7 +1425,7 @@ export const hideLink = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch(
+      const res = await diagnosticFetch("hide",
         `https://oauth.reddit.com/api/${isHidden ? "unhide" : "hide"}`,
         {
           method: "POST",
@@ -1456,7 +1457,7 @@ export const postVote = async ({
   const token = await (await getToken())?.accessToken;
   if (token) {
     logApiRequest("cud", true);
-    const res = await fetch("https://oauth.reddit.com/api/vote", {
+    const res = await diagnosticFetch("vote", "https://oauth.reddit.com/api/vote", {
       method: "POST",
       headers: {
         Authorization: `bearer ${token}`,
@@ -1485,7 +1486,7 @@ export const postComment = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch("https://oauth.reddit.com/api/comment", {
+      const res = await diagnosticFetch("comment", "https://oauth.reddit.com/api/comment", {
         method: "POST",
         headers: {
           Authorization: `bearer ${token}`,
@@ -1522,7 +1523,7 @@ export const editUserText = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch("https://oauth.reddit.com/api/editusertext", {
+      const res = await diagnosticFetch("comment", "https://oauth.reddit.com/api/editusertext", {
         method: "POST",
         headers: {
           Authorization: `bearer ${token}`,
@@ -1555,7 +1556,7 @@ export const deleteLink = async ({
   if (token) {
     try {
       logApiRequest("cud", true);
-      const res = await fetch("https://oauth.reddit.com/api/del", {
+      const res = await diagnosticFetch("delete", "https://oauth.reddit.com/api/del", {
         method: "POST",
         headers: {
           Authorization: `bearer ${token}`,

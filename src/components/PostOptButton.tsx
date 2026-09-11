@@ -15,6 +15,7 @@ import useFilterSubs from "../hooks/useFilterSubs";
 import { useRead } from "../hooks/useRead";
 import Checkbox from "./ui/Checkbox";
 import SubButton from "./SubButton";
+import { useDiagnosticCaptureHandlers, useDiagnostics } from "../diagnostics/context";
 
 const MyLink = (props) => {
   let { href, children, ...rest } = props;
@@ -40,6 +41,8 @@ const PostOptButton = ({
   setShowUI,
   buttonStyles = "",
 }: Props) => {
+  const { openDiagnostics } = useDiagnostics();
+  const captureDiagnostics = useDiagnosticCaptureHandlers();
   const context: any = useMainContext();
   const { addSubFilter, addUserFilter } = useFilterSubs();
   const filterMenuRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +71,7 @@ const PostOptButton = ({
               }}
             >
               <Menu.Button
+                {...(mode === "post" || mode === "fullmedia" ? captureDiagnostics : {})}
                 aria-label="post options"
                 className={
                   " flex justify-center items-center  border  " +
@@ -366,6 +370,22 @@ const PostOptButton = ({
                     </div>
                   )}
                 </Menu.Item>
+                {(mode === "post" || mode === "fullmedia") && (
+                  <>
+                    <div role="separator" className="my-1 border-t border-th-border" />
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={(active ? "bg-th-highlight " : "") + "w-full px-2 py-3 text-sm text-left"}
+                          onClick={(event) => { event.stopPropagation(); openDiagnostics(); }}
+                        >
+                          Diagnose this view
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </>
+                )}
               </Menu.Items>
             </Transition>
           </>

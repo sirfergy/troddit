@@ -4,13 +4,14 @@ import useParseBodyHTML from "../hooks/useParseBodyHTML";
 import { useTheme } from "next-themes";
 import { ErrorBoundary } from "react-error-boundary";
 import { BsChevronCompactDown } from "react-icons/bs";
+import { recordRenderError } from "../diagnostics/runtime";
 
 const scrollStyle =
   " scrollbar-thin scrollbar-thumb-th-scrollbar scrollbar-track-transparent scrollbar-thumb-rounded-full scrollbar-track-rounded-full ";
 
 const ErrorFallBack = () => {
   return (
-    <div className="text-sm text-th-red">
+    <div data-troddit-render-error className="text-sm text-th-red">
       {"<troddit encountered an issue rendering this text>"}
     </div>
   );
@@ -67,7 +68,7 @@ const PostBody = ({
 
   return (
     <>
-      <ErrorBoundary FallbackComponent={ErrorFallBack}>
+      <ErrorBoundary FallbackComponent={ErrorFallBack} onError={(error) => recordRenderError("post-body", error)}>
         <div
           ref={ref}
           id="innerhtml"

@@ -2,9 +2,11 @@
 
 ## Unreleased
 ### New
+- Diagnosis-first PWA controls with pre-interaction snapshots, redacted local reports, and verified build information.
 - Inline video previews, Tenor GIF embeds, and Imgur album/gallery embeds with on-demand loading and original-link fallbacks.
 
 ### Fixes
+- Preserve the open view and unsent replies when connectivity returns instead of automatically reloading.
 - Preserve formatted media links and keep preview controls outside the link.
 - Apply saved image-expansion preferences after they load without overriding manually opened or collapsed previews.
 - Typecheck all application TypeScript sources in CI and correct previously unchecked diagnostics.

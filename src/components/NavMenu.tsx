@@ -6,6 +6,7 @@ import { useMainContext } from "../MainContext";
 import Toggles from "./settings/Toggles";
 import { useWindowWidth } from "@react-hook/window-size/throttled";
 import { useSession, signOut } from "next-auth/react";
+import { useDiagnosticCaptureHandlers, useDiagnostics } from "../diagnostics/context";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -15,6 +16,8 @@ const subOptionStyle =
   "px-4 py-3 text-sm hover:bg-th-highlight  cursor-pointer";
 
 const NavMenu = ({ hide = false }) => {
+  const { openDiagnostics } = useDiagnostics();
+  const captureDiagnostics = useDiagnosticCaptureHandlers();
   const context: any = useMainContext();
   const { data: session } = useSession();
   const [touched, setTouched] = useState(false);
@@ -76,6 +79,7 @@ const NavMenu = ({ hide = false }) => {
     >
       <div className="flex-grow w-full">
         <Menu.Button
+          {...captureDiagnostics}
           aria-label="options"
           title={"options"}
           name="Options"
@@ -410,6 +414,18 @@ const NavMenu = ({ hide = false }) => {
                     
                   </Link>
                 </div>
+              )}
+            </Menu.Item>
+            <div role="separator" className="my-1 border-t border-th-border" />
+            <Menu.Item>
+              {({ active }) => (
+                <button
+                  type="button"
+                  className={classNames(active ? "bg-th-highlight" : "", "block w-full px-4 py-3 text-sm")}
+                  onClick={(event) => { event.stopPropagation(); openDiagnostics(); }}
+                >
+                  Diagnose this view
+                </button>
               )}
             </Menu.Item>
             <Menu.Item>

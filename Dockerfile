@@ -13,6 +13,8 @@ RUN yarn install --frozen-lockfile --production=false
 # Rebuild the source code only when needed
 FROM node:24-alpine AS builder
 
+ARG BUILD_REVISION
+ENV NEXT_PUBLIC_BUILD_REVISION=${BUILD_REVISION}
 ENV NODE_ENV=production
 
 # Next.js collects completely anonymous telemetry data about general usage.

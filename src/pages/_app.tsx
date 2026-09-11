@@ -20,6 +20,7 @@ import { checkVersion } from "../../lib/utils";
 import ToastCustom from "../components/toast/ToastCustom";
 import { usePlausible } from "next-plausible";
 import RateLimitModal from "../components/RateLimitModal";
+import DiagnosticsProvider from "../components/DiagnosticsProvider";
 
 const VERSION = packageInfo.version;
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = ({ Component, pageProps }) => {
   return (
     <SessionProvider session={pageProps.session}>
       <ThemeProvider defaultTheme="system">
+        <DiagnosticsProvider queryClient={queryClient} version={VERSION}>
         <MainProvider>
           <MySubsProvider>
             <MyCollectionsProvider>
@@ -42,6 +44,7 @@ const App = ({ Component, pageProps }) => {
             </MyCollectionsProvider>
           </MySubsProvider>
         </MainProvider>
+        </DiagnosticsProvider>
       </ThemeProvider>
     </SessionProvider>
   );
