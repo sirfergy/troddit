@@ -13,7 +13,7 @@ let inflight: Promise<string | null> | null = null;
 export function redditUserAgent(): string {
   return (
     process.env.REDDIT_USER_AGENT ||
-    `web:troddit:v0.21.0 (self-hosted troddit client)`
+    `web:troddit:v0.21.1 (self-hosted troddit client)`
   );
 }
 
