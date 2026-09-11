@@ -28,7 +28,7 @@ const IntInput = ({ label, subtext, setting, mini = false, rounded=true, styles=
       switch (setting) {
         case "fastRefreshInterval":
           setDefaultValue(60);
-          setInputValue(context?.fastRefreshInterval / 1000 ?? 60);
+          setInputValue((context?.fastRefreshInterval ?? 60 * 1000) / 1000);
           !label && setInputLabel("Fast Refresh Interval");
           !subtext &&
             setInputSubtext(
@@ -37,7 +37,7 @@ const IntInput = ({ label, subtext, setting, mini = false, rounded=true, styles=
           break;
         case "slowRefreshInterval":
           setDefaultValue(60 * 30);
-          setInputValue(context?.slowRefreshInterval / 1000 ?? 60 * 30);
+          setInputValue((context?.slowRefreshInterval ?? 60 * 30 * 1000) / 1000);
           !label && setInputLabel("Refresh Interval");
           !subtext &&
             setInputSubtext(

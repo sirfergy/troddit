@@ -1,7 +1,13 @@
 # Changelog
 
 ## Unreleased
+### New
+- Inline video previews, Tenor GIF embeds, and Imgur album/gallery embeds with on-demand loading and original-link fallbacks.
+
 ### Fixes
+- Preserve formatted media links and keep preview controls outside the link.
+- Apply saved image-expansion preferences after they load without overriding manually opened or collapsed previews.
+- Typecheck all application TypeScript sources in CI and correct previously unchecked diagnostics.
 - Reset cancelled full-screen media swipes so posts do not remain partially off-screen.
 
 ## v0.21.0

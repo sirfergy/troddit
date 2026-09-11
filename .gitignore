@@ -11,6 +11,7 @@
 # next.js
 /.next/
 /out/
+*.tsbuildinfo
 
 # production
 /build
@@ -50,4 +51,3 @@ yarn-error.log*
 
 #other
 .secrets
-

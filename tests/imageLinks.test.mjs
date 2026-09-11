@@ -5,7 +5,7 @@ import {
   hasSupportedImageExtension,
   isExpandableImageLink,
   supportedImageExtensions,
-} from "../lib/imageLinks.ts";
+} from "../lib/mediaLinks.ts";
 
 test("preserves direct HTTPS image URLs and their query strings and fragments", () => {
   for (const extension of supportedImageExtensions) {

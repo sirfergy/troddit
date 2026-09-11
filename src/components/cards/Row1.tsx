@@ -126,7 +126,7 @@ const Row1 = ({
             {/* Thumbnail */}
             <a
               href={
-                `${post?.url?.replace("reddit.com", "troddit.com")}` ??
+                post?.url?.replace("reddit.com", "troddit.com") ??
                 `https://troddit.com${post?.permalink}`
               }
               target={"_blank"}
@@ -407,7 +407,7 @@ const Row1 = ({
                   />
                 </div>
                 <a
-                  href={`${post?.url}` ?? "https://troddit.com"}
+                  href={post?.url ?? "https://troddit.com"}
                   target="_blank"
                   rel="noreferrer"
                 >

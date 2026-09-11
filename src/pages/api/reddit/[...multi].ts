@@ -19,7 +19,7 @@ export const config = {
   api: { bodyParser: false },
 };
 
-function readRawBody(request: NextApiRequest): Promise<Buffer> {
+function readRawBody(request: NextApiRequest): Promise<Buffer<ArrayBuffer>> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     request.on("data", (chunk) => chunks.push(chunk));

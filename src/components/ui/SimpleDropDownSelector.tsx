@@ -42,7 +42,7 @@ const SimpleDropDownSelector = ({
             "absolute z-10 right-0 mt-1 py-2 w-full origin-top   rounded-md shadow-lg ring-1 ring-th-base ring-opacity-5 focus:outline-none border border-th-border bg-th-background2 "
           }
         >
-          {Object.keys(items).map((key) => (
+          {Object.entries(items).map(([key, item]) => (
             <Menu.Item key={key}>
               {({ active, disabled }) => (
                 <div
@@ -57,9 +57,7 @@ const SimpleDropDownSelector = ({
                   }}
                 >
                   <span className="flex flex-row items-center justify-center h-6 capitalize">
-                    {(items[key] as { [x: string]: { name?: string } })?.name ??
-                      items[key] ??
-                      key}
+                    {typeof item === "string" ? item : item?.name ?? key}
                   </span>
                 </div>
               )}

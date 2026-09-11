@@ -5,7 +5,7 @@ import {
   userFilters,
 } from "../src/MainContext";
 import { GalleryInfo, ImageInfo, MediaInfo, VideoInfo } from "../types";
-import { hasSupportedImageExtension } from "./imageLinks";
+import { hasSupportedImageExtension } from "./mediaLinks";
 
 const DOMAIN = "www.troddit.com";
 export const secondsToTime = (

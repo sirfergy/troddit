@@ -1,7 +1,7 @@
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from "react";
 import ParseATag from "../components/ParseATag";
-import { isExpandableImageLink } from "../../lib/imageLinks";
+import { getInlineMedia } from "../../lib/mediaLinks";
 
 import HtmlToReact from "html-to-react";
 
@@ -11,21 +11,36 @@ const isValidNode = function () {
   return true;
 };
 
+interface BodyNode {
+  name?: string;
+  attribs?: { href?: string };
+  children?: BodyNode[];
+}
+
+const containsEmbeddedMedia = (node: BodyNode): boolean =>
+  ["img", "picture", "video", "audio", "iframe"].includes(node.name) ||
+  !!node.children?.some(containsEmbeddedMedia);
+
 // Order matters. Instructions are processed in the order they're defined
 const processNodeDefinitions = HtmlToReact.ProcessNodeDefinitions();
 const processingInstructions = [
   {
     shouldProcessNode: function (node) {
-      let check =
-        node.parent &&
-        node.parent.name &&
-        node.parent.name === "a" &&
-        checkSupport(node.parent?.attribs?.href, node) &&
-        node.name !== "img"; //leave comment gifs alone
-      return check;
+      return (
+        node.name === "a" &&
+        !!getInlineMedia(node.attribs?.href) &&
+        !containsEmbeddedMedia(node)
+      );
     },
     processNode: function (node, children, index) {
-      return React.createElement(ParseATag, { key: index }, node); //node?.data?.toUpperCase();
+      const href = node.attribs.href;
+      const media = getInlineMedia(href);
+      const anchor = processNodeDefinitions.processDefaultNode(node, children, index);
+      return media ? (
+        <ParseATag key={`${index}:${href}`} href={href} media={media}>
+          {anchor}
+        </ParseATag>
+      ) : anchor;
     },
   },
   {
@@ -36,15 +51,6 @@ const processingInstructions = [
     processNode: processNodeDefinitions.processDefaultNode,
   },
 ];
-const checkSupport = (link: string, node: any) => {
-  //prevent recurring nodes from all having expansion buttons
-  if (node?.next?.parent?.attribs?.href === link) {
-    return false;
-  }
-
-  return isExpandableImageLink(link);
-};
-
 const useParseBodyHTML = ({ rawHTML, newTabLinks = false }) => {
   const [component, setComponent] = useState<any>();
 
@@ -107,7 +113,7 @@ const useParseBodyHTML = ({ rawHTML, newTabLinks = false }) => {
     }
     let reactElement = parseHTML(result);
     setComponent(reactElement);
-  }, [rawHTML]);
+  }, [rawHTML, newTabLinks]);
 
   return component;
 };
