@@ -2,7 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import packageInfo from "../../../package.json";
-import { buildId, buildRevision } from "../../../lib/diagnostics";
+import { buildId, buildRevision } from "../../../lib/appUpdates";
+
+let productionBuildId: string | null = null;
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   response.setHeader("Cache-Control", "no-store, max-age=0");
@@ -19,7 +21,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   try {
     const id = process.env.NODE_ENV === "development"
       ? "development"
-      : buildId((await readFile(path.join(process.cwd(), ".next", "BUILD_ID"), "utf8")).trim());
+      : (productionBuildId ??= buildId((await readFile(path.join(process.cwd(), ".next", "BUILD_ID"), "utf8")).trim()));
     if (!id) throw new Error("Build ID unavailable");
     response.status(200).json({
       nonce, buildId: id, version: packageInfo.version,

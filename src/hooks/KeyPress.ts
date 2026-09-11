@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { useMainContext } from "../MainContext";
-import { useDiagnosticsOpen } from "../diagnostics/context";
+import { useAppUpdates } from "../AppUpdates";
 
 export const useKeyPress = (targetKey) => {
   const context: any = useMainContext();
-  const diagnosticsOpen = useDiagnosticsOpen();
+  const { isOpen: updatesOpen } = useAppUpdates();
   // State for keeping track of whether key is pressed
   const [keyPressed, setKeyPressed] = useState<boolean>(false);
   // If pressed key is our target key then set to true
-  function downHandler(event: KeyboardEvent) {
-    if (event.defaultPrevented || (event.target instanceof Element && event.target.closest('[role="dialog"][data-troddit-diagnostics-ui]'))) return;
-    const { metaKey, ctrlKey, key } = event;
+  function downHandler({ metaKey,ctrlKey,key }) {
     if (key === targetKey && !(ctrlKey || metaKey)) {
       setKeyPressed(true);
     } 
@@ -23,7 +21,7 @@ export const useKeyPress = (targetKey) => {
   };
   // Add event listeners
   useEffect(() => {
-    if (!context.replyFocus && !diagnosticsOpen) {
+    if (!context.replyFocus && !updatesOpen) {
       window.addEventListener("keydown", downHandler);
       window.addEventListener("keyup", upHandler);
     } else {
@@ -35,6 +33,6 @@ export const useKeyPress = (targetKey) => {
       window.removeEventListener("keydown", downHandler);
       window.removeEventListener("keyup", upHandler);
     };
-  }, [context.replyFocus, diagnosticsOpen]);
+  }, [context.replyFocus, updatesOpen]);
   return keyPressed;
 };

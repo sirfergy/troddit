@@ -52,22 +52,18 @@ Shown in single column mode with wide UI disabled. Sort options menu is open.
 - Hover mouse over Reddit videos to play. Enable to Autoplay option to play videos automatically when entering the viewport. Enable the Audio option to play sound on hover as well.
 - Responsive desktop and mobile layouts.
 - PWA to download to your computer or phone.
-- On-device diagnosis with frozen view measurements, recent failure categories, and verified deployment information.
+- Build/version visibility, update notifications, and a confirmed app reload.
 - Docker support
 
-## Diagnosing a problem
+## App updates
 
-Choose **Diagnose this view** from the app's three-dot menu or a post's options menu. The full-screen media viewer also has an always-visible bug button outside its moving content, so it remains reachable if the viewer is displaced.
+Choose **App updates** from the app's three-dot menu or an open post's options menu to see the running version, Next.js build ID, and optional source revision. **Check for updates** compares the open page with the deployed build. A different build is not necessarily a newer commit: a rollback or a rebuild of the same commit also counts.
 
-The snapshot is captured before the diagnostic panel opens; pointer and keyboard menu activation preserve the earlier state before focus or cancellation handlers can repair it. **Copy diagnostic report** is available immediately, even while optional server/worker checks are still running. The report distinguishes measured transform/scroll-lock/cache violations from possible contributors and deployment context. A normal viewport difference, an active gesture, or a different build ID is not presented as proof of a rendering bug. If no rule matches, the tool says that no cause was identified, not that the app is healthy.
+While the app is visible, it checks periodically and when you return to it, at most once every five minutes; reconnecting and manual checks can check sooner. A different deployment produces a dismissible notice and an indicator in the app menu. Nothing reloads automatically.
 
-Reports stay in memory until you explicitly copy them. At most 40 observations are retained; reports include only observations from the five minutes preceding the capture. Browsing URLs, account/post identifiers, content, credentials, request headers/bodies, and raw exception text are excluded. If clipboard permission is denied, **View report** provides selectable text. Include a screenshot for paint-only or intermittent iPhone issues that browser measurements may not reveal.
+Checks use a POST with a fresh challenge so older GET-caching service workers cannot report a stale response as current. Offline, failed, and unverified checks are not presented as "up to date." A previously detected update keeps its menu indicator, with the panel explaining that it was available at the last successful check. The Next.js standalone build supplies `.next/BUILD_ID`; packaging layouts that omit it report metadata as unavailable.
 
-Successful requests and ordinary feed-thumbnail errors are excluded from the diagnostic trail, and media failures have a sub-quota so they cannot crowd out other evidence. Historical failures remain clues, not a confirmed current cause. Global keyboard shortcuts pause while diagnosis is open and respect key events already handled by other controls.
-
-**Check deployed build** refreshes build/worker context without changing the frozen view. The server check uses a non-cacheable POST with a fresh challenge, including when an older GET-caching service worker is still controlling the page. Missing metadata, replayed responses, and connectivity failures remain explicitly unverified. The Next.js standalone build supplies `.next/BUILD_ID`; other packaging layouts that omit it report metadata as unavailable.
-
-Reloading is a separate, confirmed action and can discard unsent replies. It never clears saved settings or local feeds. New builds no longer reload automatically when connectivity returns; already-open old bundles must first be updated to receive that behavior.
+**Reload app...** requires confirmation because reloading closes the current view and can discard unsent replies. It does not clear saved settings, local feeds, or browser caches. Offline or failed navigation can reopen a cached build; reload is not a guarantee of installing the latest deployment. New builds no longer reload automatically when connectivity returns; already-open old bundles must first be updated to receive that behavior.
 
 CI and Docker publishing include the source revision automatically. For custom builds, optionally set `NEXT_PUBLIC_BUILD_REVISION` when running `npm run build`, or pass `--build-arg BUILD_REVISION=<full-git-commit>` to Docker. Without it, the revision is shown as unavailable; the actual Next.js build ID is still checked.
 

@@ -3,7 +3,6 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { CgArrowsExpandDownRight, CgArrowsExpandUpLeft } from "react-icons/cg";
 import { useMainContext } from "../MainContext";
 import type { InlineMedia } from "../../lib/mediaLinks";
-import { recordEmbedFailure } from "../diagnostics/runtime";
 
 const ParseATag = ({
   href,
@@ -78,7 +77,6 @@ const ParseATag = ({
       }
       if (typeof data !== "object" || data === null || !("message" in data)) return;
       if (data.message === "404_imgur_embed") {
-        recordEmbedFailure();
         setFailed(true);
       } else if (
         data.message === "resize_imgur" &&
@@ -121,7 +119,6 @@ const ParseATag = ({
       </button>
       <span
         id={previewId}
-        data-troddit-media-preview
         hidden={!expanded}
         className="not-prose"
         onKeyDown={(event) => event.stopPropagation()}

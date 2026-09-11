@@ -2,7 +2,7 @@ import "../../styles/globals.css";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 
-import { MainProvider, localSeen } from "../MainContext";
+import { MainProvider } from "../MainContext";
 import { MySubsProvider } from "../MySubs";
 import { MyCollectionsProvider } from "../components/collections/CollectionContext";
 
@@ -12,15 +12,12 @@ import Script from "next/script";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
 
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import NavBar from "../components/NavBar";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import packageInfo from "../../package.json";
-import { checkVersion } from "../../lib/utils";
-import ToastCustom from "../components/toast/ToastCustom";
-import { usePlausible } from "next-plausible";
 import RateLimitModal from "../components/RateLimitModal";
-import DiagnosticsProvider from "../components/DiagnosticsProvider";
+import { AppUpdatesProvider } from "../AppUpdates";
 
 const VERSION = packageInfo.version;
 const queryClient = new QueryClient();
@@ -29,7 +26,7 @@ const App = ({ Component, pageProps }) => {
   return (
     <SessionProvider session={pageProps.session}>
       <ThemeProvider defaultTheme="system">
-        <DiagnosticsProvider queryClient={queryClient} version={VERSION}>
+        <AppUpdatesProvider version={VERSION}>
         <MainProvider>
           <MySubsProvider>
             <MyCollectionsProvider>
@@ -44,34 +41,13 @@ const App = ({ Component, pageProps }) => {
             </MyCollectionsProvider>
           </MySubsProvider>
         </MainProvider>
-        </DiagnosticsProvider>
+        </AppUpdatesProvider>
       </ThemeProvider>
     </SessionProvider>
   );
 };
 
 function MyApp({ Component, pageProps }) {
-  const plausible = usePlausible();
-  useEffect(() => {
-    const curVersion = VERSION;
-    const prevVersion = localStorage.getItem("trodditVersion");
-    if (prevVersion) {
-      let compare = checkVersion(curVersion, prevVersion);
-      // if (compare === 1) {
-      //   const toastId = toast.custom(
-      //     (t) => (
-      //       <ToastCustom
-      //         t={t}
-      //         message={`Troddit updated! Click to see changelog`}
-      //         mode={"version"}
-      //       />
-      //     ),
-      //     { position: "bottom-center", duration: 8000 }
-      //   );
-      // }
-    }
-    localStorage.setItem("trodditVersion", curVersion);
-  }, []);
   return (
     <>
       <Script defer data-domain={"troddit.com"} src="/js/script.js"></Script>

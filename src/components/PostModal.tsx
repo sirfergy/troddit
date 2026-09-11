@@ -7,8 +7,8 @@ import { useKeyPress } from "../hooks/KeyPress";
 import Thread from "./Thread";
 import useFeedGallery from "../hooks/useFeedGallery";
 import MediaModal from "./MediaModal";
-import { BiPlay, BiPause, BiBug } from "react-icons/bi";
-import { useDiagnosticCaptureHandlers, useDiagnostics } from "../diagnostics/context";
+import { BiPlay, BiPause } from "react-icons/bi";
+import { useAppUpdates } from "../AppUpdates";
 
 import PostOptButton from "./PostOptButton";
 import useGlobalState from "../hooks/useGlobalState";
@@ -34,8 +34,7 @@ const PostModal = ({
 }) => {
   const router = useRouter();
   const context: any = useMainContext();
-  const { isOpen: diagnosticsOpen, openDiagnostics } = useDiagnostics();
-  const captureDiagnostics = useDiagnosticCaptureHandlers();
+  const { isOpen: updatesOpen } = useAppUpdates();
   const { getFeedData, setFeedData } = useFeedGallery();
   // const [flattenedPosts, setFlattenedPosts] = useState(
   //   () => getFeedData() as any[]
@@ -305,7 +304,7 @@ const PostModal = ({
   const fPress = useKeyPress("f");
 
   useEffect(() => {
-    if (!context.replyFocus && !diagnosticsOpen) {
+    if (!context.replyFocus && !updatesOpen) {
       if (nextPress) {
         changePost(1);
       } else if (backPress) {
@@ -333,7 +332,7 @@ const PostModal = ({
     downPress,
     escapePress,
     context.replyFocus,
-    diagnosticsOpen,
+    updatesOpen,
   ]);
 
   const translateDiv = useRef<HTMLDivElement>(null);
@@ -354,7 +353,6 @@ const PostModal = ({
         "transform",
         `translate3d(${x}px, 0px, 0px)`
       );
-      translateDiv.current.dataset.trodditMotionAt = String(performance.now());
     }
   };
 
@@ -362,7 +360,6 @@ const PostModal = ({
     <>
       <div
         ref={translateDiv}
-        data-troddit-overlay="post"
         className={
           "fixed inset-0 z-30 w-screen min-w-full min-h-screen overscroll-y-contain bg-black/75 backdrop-filter " +
           (!useMediaMode ? " overflow-y-auto top-12 pb-12" : " ") // scrollbar-thin scrollbar-thumb-th-scrollbar scrollbar-track-transparent scrollbar-thumb-rounded-full scrollbar-track-rounded-full
@@ -428,26 +425,6 @@ const PostModal = ({
         )}
       </div>
       <>
-        {useMediaMode && (
-          <button
-            {...captureDiagnostics}
-            type="button"
-            aria-label="Diagnose current view"
-            title="Diagnose current view"
-            className="fixed z-[1001] flex items-center justify-center w-10 h-10 text-white border rounded-full bg-black/60 border-white/40"
-            style={{
-              top: "calc(env(safe-area-inset-top, 0px) + 3.5rem)",
-              left: "calc(env(safe-area-inset-left, 0px) + 0.5rem)",
-            }}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              openDiagnostics();
-            }}
-          >
-            <BiBug className="w-5 h-5" />
-          </button>
-        )}
         {/* <div className="fixed top-0 left-0 w-screen h-full -z-10 bg-black/75 opacity-80 backdrop-filter overscroll-none"></div> */}
         <button
           aria-label="go back"

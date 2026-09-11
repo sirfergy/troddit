@@ -13,8 +13,7 @@ import useLocation from "../hooks/useLocation";
 import toast from "react-hot-toast";
 import ToastCustom from "./toast/ToastCustom";
 import FeedMasonry from "./FeedMasonry";
-import { useDiagnosticsOpen } from "../diagnostics/context";
-import { recordRenderError } from "../diagnostics/runtime";
+import { useAppUpdates } from "../AppUpdates";
 
 const Feed = ({ initialData = {} as any }) => {
   const { mode, subreddits } = useLocation();
@@ -25,12 +24,12 @@ const Feed = ({ initialData = {} as any }) => {
     useRefresh();
 
   const context: any = useMainContext();
-  const diagnosticsOpen = useDiagnosticsOpen();
+  const { isOpen: updatesOpen } = useAppUpdates();
   const router = useRouter();
 
   const { pullDistance, refreshing } = usePullToRefresh({
     onRefresh: refreshCurrent,
-    disabled: context.mediaMode || context.postOpen || feed.isFetching || diagnosticsOpen,
+    disabled: context.mediaMode || context.postOpen || feed.isFetching || updatesOpen,
   });
 
   useEffect(() => {
@@ -133,7 +132,6 @@ const Feed = ({ initialData = {} as any }) => {
           }
         >
           <ErrorBoundary
-            onError={(error) => recordRenderError("feed", error)}
             FallbackComponent={ErrorFallback}
             onReset={invalidateAll} //context.setForceRefresh((i) => i + 1)}
           >
@@ -171,7 +169,6 @@ function ErrorFallback({ error, resetErrorBoundary }) {
     <div
       className="flex flex-col items-center justify-center mb-auto"
       role="alert"
-      data-troddit-render-error
     >
       <p className="text-center">Something went wrong</p>
       <button
