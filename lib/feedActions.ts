@@ -28,7 +28,7 @@ export type FeedActionContext = {
   id: string;
   queries: {
     key: QueryKey;
-    posts: { pageIndex: number; postIndex: number; fields: FieldChange[] }[];
+    posts: { occurrence: number; fields: FieldChange[] }[];
   }[];
 };
 
@@ -60,6 +60,29 @@ function writeFields(data: PostData, fields: FieldChange[], restore: boolean): P
   return next;
 }
 
+function mapPostOccurrences(
+  data: FeedData | undefined,
+  id: string,
+  update: (post: PostData, occurrence: number) => PostData
+): FeedData | undefined {
+  if (!data) return data;
+  let changed = false;
+  let occurrence = 0;
+  const pages = data.pages.map((page) => {
+    let pageChanged = false;
+    const filtered = page.filtered.map((post) => {
+      if (post.data.name !== id) return post;
+      // Count no-op copies too; duplicate baselines are paired in encounter order.
+      const next = update(post.data, occurrence++);
+      if (next === post.data) return post;
+      changed = pageChanged = true;
+      return { ...post, data: next };
+    });
+    return pageChanged ? { ...page, filtered } : page;
+  });
+  return changed ? { ...data, pages } : data;
+}
+
 export async function beginFeedAction(
   client: QueryClient,
   id: string,
@@ -67,26 +90,19 @@ export async function beginFeedAction(
 ): Promise<FeedActionContext> {
   const context: FeedActionContext = { id, queries: [] };
   if (!id.startsWith("t3_")) return context;
-  await client.cancelQueries({ queryKey: ["feed"] });
-  for (const query of client.getQueryCache().findAll({ queryKey: ["feed"] })) {
+  const keys = client.getQueriesData<FeedData>({ queryKey: ["feed"] })
+    .filter(([, data]) => data?.pages?.some((page) => page.filtered.some((post) => post.data.name === id)))
+    .map(([key]) => key);
+  await Promise.all(keys.map((key) => client.cancelQueries({ queryKey: key, exact: true })));
+  for (const key of keys) {
     const posts: FeedActionContext["queries"][number]["posts"] = [];
-    client.setQueryData<FeedData>(query.queryKey, (data) => {
-      if (!data) return data;
-      const pages = data.pages.map((page, pageIndex) => {
-        let changed = false;
-        const filtered = page.filtered.map((post, postIndex) => {
-          if (post.data.name !== id) return post;
-          const fields = fieldsFor(post.data, change);
-          if (fields.every((field) => field.present && Object.is(field.before, field.after))) return post;
-          posts.push({ pageIndex, postIndex, fields });
-          changed = true;
-          return { ...post, data: writeFields(post.data, fields, false) };
-        });
-        return changed ? { ...page, filtered } : page;
-      });
-      return posts.length ? { ...data, pages } : data;
-    });
-    if (posts.length) context.queries.push({ key: query.queryKey, posts });
+    client.setQueryData<FeedData>(key, (data) => mapPostOccurrences(data, id, (post, occurrence) => {
+      const fields = fieldsFor(post, change);
+      if (fields.every((field) => field.present && Object.is(field.before, field.after))) return post;
+      posts.push({ occurrence, fields });
+      return writeFields(post, fields, false);
+    }));
+    if (posts.length) context.queries.push({ key, posts });
   }
   return context;
 }
@@ -96,21 +112,11 @@ export async function rollbackFeedAction(client: QueryClient, context?: FeedActi
   // Pagination can start after onMutate and still hold the optimistic first page.
   await Promise.all(context.queries.map(({ key }) => client.cancelQueries({ queryKey: key, exact: true })));
   for (const query of context.queries) {
-    client.setQueryData<FeedData>(query.key, (data) => {
-      if (!data) return data;
-      let pages = data.pages;
-      for (const { pageIndex, postIndex, fields } of query.posts) {
-        const page = pages[pageIndex];
-        const post = page?.filtered[postIndex];
-        // Don't overwrite changed values from a refetch or another action.
-        if (post?.data.name !== context.id ||
-            !fields.every((field) => Object.is(post.data[field.property], field.after))) continue;
-        if (pages === data.pages) pages = [...pages];
-        const filtered = [...page.filtered];
-        filtered[postIndex] = { ...post, data: writeFields(post.data, fields, true) };
-        pages[pageIndex] = { ...page, filtered };
-      }
-      return pages === data.pages ? data : { ...data, pages };
-    });
+    client.setQueryData<FeedData>(query.key, (data) => mapPostOccurrences(data, context.id, (post, occurrence) => {
+      // Don't overwrite individual fields changed by a refetch or another action.
+      const fields = query.posts.find((entry) => entry.occurrence === occurrence)?.fields
+        .filter((field) => Object.is(post[field.property], field.after));
+      return fields?.length ? writeFields(post, fields, true) : post;
+    }));
   }
 }

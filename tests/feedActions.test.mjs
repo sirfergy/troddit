@@ -185,6 +185,141 @@ test("starting a feed action does not cancel an unrelated thread request", async
   assert.equal(await pending, "thread");
 });
 
+test("starting a feed action does not cancel unrelated feed pagination", async (t) => {
+  const client = clientFor(t);
+  const targetKey = ["feed", "target"];
+  const unrelatedKey = ["feed", "unrelated"];
+  client.setQueryData(targetKey, feed([post("t3_target")], "target"));
+  let finishTarget;
+  let targetCancelled = false;
+  const targetObserver = new InfiniteQueryObserver(client, {
+    queryKey: targetKey,
+    queryFn: ({ signal }) => new Promise((resolve) => {
+      finishTarget = resolve;
+      signal.addEventListener("abort", () => { targetCancelled = true; });
+    }),
+    getNextPageParam: (page) => page.after,
+    staleTime: Infinity,
+  });
+  t.after(targetObserver.subscribe(() => {}));
+  client.setQueryData(unrelatedKey, {
+    pages: [{ filtered: [post("t3_other")], after: "next" }],
+    pageParams: [undefined],
+  });
+  let finish;
+  let cancelled = false;
+  const observer = new InfiniteQueryObserver(client, {
+    queryKey: unrelatedKey,
+    queryFn: ({ signal }) => new Promise((resolve) => {
+      finish = resolve;
+      signal.addEventListener("abort", () => { cancelled = true; });
+    }),
+    getNextPageParam: (page) => page.after,
+    staleTime: Infinity,
+  });
+  t.after(observer.subscribe(() => {}));
+  const targetPending = targetObserver.fetchNextPage();
+  const pending = observer.fetchNextPage();
+  const context = await beginFeedAction(client, "t3_target", { property: "saved", value: true });
+  finishTarget({ filtered: [post("t3_late")], after: null });
+  await targetPending;
+  assert.equal(targetCancelled, true);
+  assert.equal(readPost(client, targetKey).saved, true);
+  assert.equal(client.getQueryData(targetKey).pages.length, 1);
+  await rollbackFeedAction(client, context);
+  finish({ filtered: [post("t3_next")], after: null });
+  await pending;
+  assert.equal(cancelled, false);
+  assert.equal(client.getQueryData(unrelatedKey).pages.length, 2);
+  assert.equal(readPost(client, targetKey).saved, false);
+});
+
+test("rollback finds a reordered target without changing inserted posts", async (t) => {
+  const client = clientFor(t);
+  const key = ["feed", "reordered"];
+  client.setQueryData(key, feed([post("t3_target"), post("t3_other")], "home"));
+  const context = await beginFeedAction(client, "t3_target", { property: "saved", value: true });
+  client.setQueryData(key, (current) => ({
+    ...current,
+    pages: current.pages.map((page) => ({
+      ...page,
+      filtered: [post("t3_inserted", { saved: true }), ...page.filtered.slice(1), page.filtered[0]],
+    })),
+  }));
+  await rollbackFeedAction(client, context);
+  assert.equal(readPost(client, key).saved, false);
+  assert.equal(readPost(client, key, "t3_inserted").saved, true);
+  assert.equal(readPost(client, key, "t3_other").saved, false);
+  assert.deepEqual(client.getQueryData(key).pages[0].filtered.map((entry) => entry.data.name), [
+    "t3_inserted", "t3_other", "t3_target",
+  ]);
+});
+
+test("rollback restores vote fields independently of newer values in the other field", async (t) => {
+  for (const [changedField, changedValue, likes, score] of [
+    ["score", 99, null, 99],
+    ["likes", false, false, 10],
+  ]) {
+    const client = clientFor(t);
+    const key = ["feed", "partial-vote"];
+    client.setQueryData(key, feed([post("t3_target")], "home"));
+    const context = await beginFeedAction(client, "t3_target", { property: "likes", value: 1 });
+    client.setQueryData(key, (current) => ({
+      ...current,
+      pages: current.pages.map((page) => ({
+        ...page,
+        filtered: page.filtered.map((entry) => ({
+          ...entry, data: { ...entry.data, [changedField]: changedValue },
+        })),
+      })),
+    }));
+    await rollbackFeedAction(client, context);
+    assert.equal(readPost(client, key).likes, likes);
+    assert.equal(readPost(client, key).score, score);
+  }
+});
+
+test("partial vote rollback restores absent likes without replacing a newer score", async (t) => {
+  const client = clientFor(t);
+  const key = ["feed", "absent-vote"];
+  client.setQueryData(key, feed([{ kind: "t3", data: { name: "t3_target", score: 10 } }], "home"));
+  const context = await beginFeedAction(client, "t3_target", { property: "likes", value: 1 });
+  client.setQueryData(key, (current) => ({
+    ...current,
+    pages: current.pages.map((page) => ({
+      ...page,
+      filtered: page.filtered.map((entry) => ({ ...entry, data: { ...entry.data, score: 99 } })),
+    })),
+  }));
+  await rollbackFeedAction(client, context);
+  assert.equal(Object.hasOwn(readPost(client, key), "likes"), false);
+  assert.equal(readPost(client, key).score, 99);
+});
+
+test("optimism and rollback use the data left after affected-query cancellation", async (t) => {
+  const client = clientFor(t);
+  const key = ["feed", "cancellation-baseline"];
+  client.setQueryData(key, feed([post("t3_target", { score: 10 })], "home"));
+  let finish;
+  const observer = new InfiniteQueryObserver(client, {
+    queryKey: key,
+    queryFn: () => new Promise((resolve) => { finish = resolve; }),
+    getNextPageParam: (page) => page.after,
+    staleTime: Infinity,
+  });
+  t.after(observer.subscribe(() => {}));
+  const pending = observer.fetchNextPage();
+  client.setQueryData(key, feed([post("t3_target", { score: 20 })], "intermediate"));
+  const context = await beginFeedAction(client, "t3_target", { property: "likes", value: 1 });
+  assert.equal(readPost(client, key).score, 11);
+  finish({ filtered: [post("t3_late")], after: null });
+  await pending;
+  await rollbackFeedAction(client, context);
+  assert.equal(readPost(client, key).score, 10);
+  assert.equal(readPost(client, key).likes, null);
+  assert.equal(client.getQueryData(key).pages.length, 1);
+});
+
 test("late pagination cannot resurrect a failed action and can be retried", async (t) => {
   const client = clientFor(t);
   const key = ["feed", "HOME"];
@@ -242,18 +377,32 @@ test("comment actions do not touch feed entries", async (t) => {
   assert.equal(client.getQueryData(key), before);
 });
 
-test("duplicate occurrences retain their own original field values", async (t) => {
+test("duplicate occurrences retain their own original values even when the first copy is a no-op", async (t) => {
+  for (const saved of [[false, true], [true, false]]) {
+    const client = clientFor(t);
+    const key = ["feed", "duplicates"];
+    const before = {
+      pages: saved.map((value) => ({ filtered: [post("t3_target", { saved: value })] })),
+      pageParams: [undefined, "next"],
+    };
+    client.setQueryData(key, before);
+    const context = await beginFeedAction(client, "t3_target", { property: "saved", value: true });
+    await rollbackFeedAction(client, context);
+    assert.deepEqual(client.getQueryData(key), before);
+  }
+});
+
+test("rollback leaves newly appended copies of the same post untouched", async (t) => {
   const client = clientFor(t);
   const key = ["feed", "duplicates"];
-  const before = {
-    pages: [
-      { filtered: [post("t3_target")] },
-      { filtered: [post("t3_target", { saved: true })] },
-    ],
-    pageParams: [undefined, "next"],
-  };
-  client.setQueryData(key, before);
+  client.setQueryData(key, feed([post("t3_target")], "home"));
   const context = await beginFeedAction(client, "t3_target", { property: "saved", value: true });
+  client.setQueryData(key, (current) => ({
+    ...current,
+    pages: [...current.pages, { filtered: [post("t3_target", { saved: true })], after: null }],
+    pageParams: [...current.pageParams, "next"],
+  }));
   await rollbackFeedAction(client, context);
-  assert.deepEqual(client.getQueryData(key), before);
+  assert.equal(client.getQueryData(key).pages[0].filtered[0].data.saved, false);
+  assert.equal(client.getQueryData(key).pages[1].filtered[0].data.saved, true);
 });
