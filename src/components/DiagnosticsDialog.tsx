@@ -117,12 +117,13 @@ export default function DiagnosticsDialog({
               <dt>Captured view</dt><dd>{snapshot.client.view}</dd>
               <dt>Server build</dt><dd>{build.status === "verified" ? build.buildId : build.status}</dd>
               <dt>Server revision</dt><dd>{build.status === "verified" ? build.revision ?? "Not supplied" : "Not verified"}</dd>
-              <dt>Worker</dt><dd>{worker.status === "registered" ? `${worker.active ?? "no active worker"}; controlled: ${worker.controlled}; waiting: ${worker.waiting}; controller changed: ${worker.controllerChanged}` : worker.status}</dd>
+              <dt>Worker</dt><dd>{worker.status === "registered" ? `${worker.active ?? "no active worker"}; controlled: ${worker.controlled}; waiting: ${worker.waiting}; controller change observed: ${worker.controllerChanged}` : worker.status}</dd>
               <dt>Browser</dt><dd>{snapshot.browser.family} {snapshot.browser.version ?? ""} / {snapshot.browser.platform}</dd>
               <dt>Standalone</dt><dd>{String(snapshot.browser.standalone)}</dd>
               <dt>Layout viewport</dt><dd>{snapshot.viewport.width} x {snapshot.viewport.height}</dd>
               <dt>Visible viewport</dt><dd>{snapshot.viewport.visualWidth ?? "unknown"} x {snapshot.viewport.visualHeight ?? "unknown"}; scale {snapshot.viewport.scale ?? "unknown"}</dd>
             </dl>
+            <p className="mt-2 text-xs">Controller changes are events observed since diagnostics started on this page. The page may already have been controlled before then.</p>
             <p className="mt-2 text-xs">Viewport differences can be normal with a keyboard, zoom, or browser chrome. They are not diagnosed as a bug on their own.</p>
             <button type="button" className={`${buttonStyle} mt-3 text-sm`} onClick={onCheckBuild} disabled={build.status === "checking"}>
               Check deployed build

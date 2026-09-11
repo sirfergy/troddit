@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { QueryClient } from "@tanstack/react-query";
 import {
-  browserPlatform, buildId, buildRevision, createDiagnosticBuffer, inspectFeedCache,
+  browserPlatform, buildId, buildRevision, createDiagnosticBuffer, inspectFeedCache, intersectsViewport,
   observeRequest, parseTranslation, validateBuildResponse,
 } from "../../lib/diagnostics";
 import type {
@@ -11,6 +11,7 @@ import type {
 const buffer = createDiagnosticBuffer(() => performance.now());
 const pointers = new Map<number, { at: number; type: string }>();
 const touches = new Map<number, number>();
+// Records observed events, not control that already existed when diagnostics started.
 let controllerChanged = false;
 
 const safelyRecord = (record: () => void) => {
@@ -193,7 +194,9 @@ function captureLayout(): LayoutSnapshot {
       inputTrackingStale: [...pointers.values()].some((pointer) => performance.now() - pointer.at > 10_000) ||
         [...touches.values()].some((at) => performance.now() - at > 10_000),
       zoom: rail ? numericAttribute(rail, "data-troddit-zoom") : 1,
-      renderErrors: countRendered("[data-troddit-render-error]"),
+      renderErrors: Array.from((root ?? document).querySelectorAll("[data-troddit-render-error]"))
+        .filter((element) => rendered(element) &&
+          intersectsViewport(element.getBoundingClientRect(), window.innerWidth, window.innerHeight)).length,
     };
   } catch {
     buffer.recordingFailed();

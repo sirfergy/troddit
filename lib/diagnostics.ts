@@ -169,6 +169,15 @@ export function browserPlatform(ua: string, platform: string, maxTouchPoints: nu
   return "other";
 }
 
+export function intersectsViewport(
+  rect: { left: number; top: number; right: number; bottom: number },
+  width: number,
+  height: number
+) {
+  return rect.right > rect.left && rect.bottom > rect.top && width > 0 && height > 0 &&
+    rect.right > 0 && rect.bottom > 0 && rect.left < width && rect.top < height;
+}
+
 export type WorkerCheck =
   | { status: "checking" | "unsupported" | "unavailable" | "unregistered" }
   | { status: "registered"; controlled: boolean; controllerChanged: boolean; active: string | null; waiting: boolean; installing: boolean };
@@ -263,8 +272,8 @@ export function diagnose(snapshot: DiagnosticSnapshot, build: BuildCheck, worker
       }
       if (layout.renderErrors > 0) findings.push({
         code: "render-fallback", confidence: "measured", title: "A rendering error view is active",
-        explanation: "Troddit has replaced part of the interface with an error fallback. This is an application rendering failure, not proof of a Safari paint bug.",
-        evidence: [`Visible error fallbacks: ${layout.renderErrors}`],
+        explanation: "A rendering fallback in the active view intersects the layout viewport. This is application error state, not proof of a Safari paint bug.",
+        evidence: [`Fallback areas intersecting the layout viewport: ${layout.renderErrors}`],
         nextStep: "Include the recent failure details and build identity when reporting this.",
       });
     }

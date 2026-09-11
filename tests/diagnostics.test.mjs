@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  browserPlatform, buildRevision, createDiagnosticBuffer, diagnose, inspectFeedCache,
+  browserPlatform, buildRevision, createDiagnosticBuffer, diagnose, inspectFeedCache, intersectsViewport,
   observeRequest, parseTranslation, validateBuildResponse,
 } from "../lib/diagnostics.ts";
 
@@ -242,6 +242,25 @@ test("platform context recognizes desktop-mode iPads without relabeling other to
   for (const [ua, platform, points, expected] of cases) {
     assert.equal(browserPlatform(ua, platform, points), expected);
   }
+});
+
+test("fallback geometry requires positive overlap with the layout viewport", () => {
+  const cases = [
+    [{ left: 24, top: 100, right: 224, bottom: 148 }, true],
+    [{ left: 24, top: 664, right: 224, bottom: 712 }, false],
+    [{ left: 24, top: -48, right: 224, bottom: 0 }, false],
+    [{ left: -200, top: 100, right: 0, bottom: 148 }, false],
+    [{ left: 390, top: 100, right: 590, bottom: 148 }, false],
+    [{ left: -20, top: 100, right: 180, bottom: 148 }, true],
+    [{ left: -20, top: -20, right: 500, bottom: 800 }, true],
+    [{ left: 20, top: 100, right: 20, bottom: 148 }, false],
+    [{ left: 24, top: 100, right: 224, bottom: 100 }, false],
+  ];
+  for (const [rect, expected] of cases) {
+    assert.equal(intersectsViewport(rect, 390, 664), expected);
+  }
+  assert.equal(intersectsViewport(cases[0][0], 0, 664), false);
+  assert.equal(intersectsViewport(cases[0][0], 390, 0), false);
 });
 
 test("matrix parsing reads only translation components and rejects unavailable data", () => {
