@@ -6,6 +6,7 @@
 
 ### Fixes
 - Preserve formatted media links and keep preview controls outside the link.
+- Apply saved image-expansion preferences after they load without overriding manually opened or collapsed previews.
 - Typecheck all application TypeScript sources in CI and correct previously unchecked diagnostics.
 - Reset cancelled full-screen media swipes so posts do not remain partially off-screen.
 

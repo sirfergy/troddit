@@ -19,9 +19,9 @@ const ParseATag = ({
     context !== null &&
     "expandImages" in context &&
     context.expandImages === true;
-  const [expanded, setExpanded] = useState(
-    () => media.kind === "image" && autoExpandImages
-  );
+  const [userExpanded, setUserExpanded] = useState<boolean>();
+  const expanded =
+    userExpanded ?? (media.kind === "image" && autoExpandImages);
   const [failed, setFailed] = useState(false);
   const [embedSrc, setEmbedSrc] = useState<string>();
   const [embedHeight, setEmbedHeight] = useState(500);
@@ -104,7 +104,7 @@ const ParseATag = ({
         type="button"
         onClick={() => {
           setFailed(false);
-          setExpanded((value) => !value);
+          setUserExpanded((value) => !(value ?? expanded));
         }}
         aria-expanded={expanded}
         aria-controls={previewId}
