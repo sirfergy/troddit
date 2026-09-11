@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { QueryClient } from "@tanstack/react-query";
 import {
-  buildId, buildRevision, createDiagnosticBuffer, inspectFeedCache,
+  browserPlatform, buildId, buildRevision, createDiagnosticBuffer, inspectFeedCache,
   observeRequest, parseTranslation, validateBuildResponse,
 } from "../../lib/diagnostics";
 import type {
@@ -96,16 +96,13 @@ export function installDiagnosticListeners() {
   });
   const onRejection = (event: PromiseRejectionEvent) => safelyRecord(() => buffer.runtime("window", event.reason));
   let workerContainer: ServiceWorkerContainer | undefined;
-  let priorController: ServiceWorker | null = null;
   try {
     workerContainer = "serviceWorker" in navigator ? navigator.serviceWorker : undefined;
-    priorController = workerContainer?.controller ?? null;
   } catch {
     buffer.recordingFailed();
   }
   const onControllerChange = () => safelyRecord(() => {
-    if (priorController) controllerChanged = true;
-    priorController = workerContainer?.controller ?? null;
+    controllerChanged = true;
   });
   window.addEventListener("pointerdown", onPointerDown, { capture: true, passive: true });
   window.addEventListener("pointerup", onPointerEnd, { capture: true, passive: true });
@@ -257,7 +254,7 @@ export function captureDiagnostics(
     client: { buildId: clientBuildId(), revision: buildRevision(revision), version, view: layout.owners.post > 0 ? "post" : viewKind(currentPath) },
     browser: {
       ...browserIdentity(ua),
-      platform: /iPhone|iPad|iPod/.test(ua) ? "iOS" : /Macintosh/.test(ua) ? "macOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : "other",
+      platform: browserPlatform(ua, navigator.platform, navigator.maxTouchPoints),
       standalone: window.matchMedia("(display-mode: standalone)").matches || ("standalone" in navigator && navigator.standalone === true),
       online: navigator.onLine, secure: window.isSecureContext,
     },

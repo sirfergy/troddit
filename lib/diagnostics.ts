@@ -160,6 +160,15 @@ export function validateBuildResponse(value: unknown, nonce: string, checkedAt: 
   return { status: "verified", buildId: id, version, revision: "revision" in value ? buildRevision(value.revision) : null, checkedAt };
 }
 
+export function browserPlatform(ua: string, platform: string, maxTouchPoints: number) {
+  if (/iPhone|iPad|iPod/.test(ua) ||
+      (/Macintosh/.test(ua) && platform === "MacIntel" && maxTouchPoints > 1)) return "iOS";
+  if (/Macintosh/.test(ua)) return "macOS";
+  if (/Android/.test(ua)) return "Android";
+  if (/Windows/.test(ua)) return "Windows";
+  return "other";
+}
+
 export type WorkerCheck =
   | { status: "checking" | "unsupported" | "unavailable" | "unregistered" }
   | { status: "registered"; controlled: boolean; controllerChanged: boolean; active: string | null; waiting: boolean; installing: boolean };

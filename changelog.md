@@ -6,6 +6,7 @@
 - Inline video previews, Tenor GIF embeds, and Imgur album/gallery embeds with on-demand loading and original-link fallbacks.
 
 ### Fixes
+- Recognize desktop-mode iPads in diagnostics and report initial service-worker control as a controller change.
 - Preserve the open view and unsent replies when connectivity returns instead of automatically reloading.
 - Preserve formatted media links and keep preview controls outside the link.
 - Apply saved image-expansion preferences after they load without overriding manually opened or collapsed previews.

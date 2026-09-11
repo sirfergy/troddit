@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  buildRevision, createDiagnosticBuffer, diagnose, inspectFeedCache,
+  browserPlatform, buildRevision, createDiagnosticBuffer, diagnose, inspectFeedCache,
   observeRequest, parseTranslation, validateBuildResponse,
 } from "../lib/diagnostics.ts";
 
@@ -223,6 +223,25 @@ test("stale input is explicit uncertainty, not proof of release; small viewport 
   assert.deepEqual(measured(value), []);
   assert.ok(findings.some((finding) => finding.explanation.includes("old contact")));
   assert.ok(findings.some((finding) => finding.code === "no-cause-identified"));
+});
+
+test("platform context recognizes desktop-mode iPads without relabeling other touch devices", () => {
+  const mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Version/26.0 Safari/605.1.15";
+  const cases = [
+    [mac, "MacIntel", 5, "iOS"],
+    [mac, "MacIntel", 0, "macOS"],
+    [mac, "MacIntel", 1, "macOS"],
+    [mac, "MacPPC", 5, "macOS"],
+    ["iPad; CPU OS 18_6 like Mac OS X", "iPad", 0, "iOS"],
+    ["iPhone; CPU iPhone OS 18_6 like Mac OS X", "iPhone", 0, "iOS"],
+    ["Linux; Android 16", "Linux armv8l", 5, "Android"],
+    ["Windows NT 10.0", "Win32", 10, "Windows"],
+    ["Windows NT 10.0", "MacIntel", 10, "Windows"],
+    ["Linux PRIVATE_USER", "Linux", 5, "other"],
+  ];
+  for (const [ua, platform, points, expected] of cases) {
+    assert.equal(browserPlatform(ua, platform, points), expected);
+  }
 });
 
 test("matrix parsing reads only translation components and rejects unavailable data", () => {
