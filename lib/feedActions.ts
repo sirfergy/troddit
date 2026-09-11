@@ -113,10 +113,10 @@ export async function rollbackFeedAction(client: QueryClient, context?: FeedActi
   await Promise.all(context.queries.map(({ key }) => client.cancelQueries({ queryKey: key, exact: true })));
   for (const query of context.queries) {
     client.setQueryData<FeedData>(query.key, (data) => mapPostOccurrences(data, context.id, (post, occurrence) => {
-      // Don't overwrite individual fields changed by a refetch or another action.
-      const fields = query.posts.find((entry) => entry.occurrence === occurrence)?.fields
-        .filter((field) => Object.is(post[field.property], field.after));
-      return fields?.length ? writeFields(post, fields, true) : post;
+      const fields = query.posts.find((entry) => entry.occurrence === occurrence)?.fields;
+      // A refetch supplies likes and score together, even if the vote response failed.
+      return fields?.every((field) => Object.is(post[field.property], field.after))
+        ? writeFields(post, fields, true) : post;
     }));
   }
 }

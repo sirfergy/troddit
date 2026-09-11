@@ -255,44 +255,35 @@ test("rollback finds a reordered target without changing inserted posts", async 
   ]);
 });
 
-test("rollback restores vote fields independently of newer values in the other field", async (t) => {
-  for (const [changedField, changedValue, likes, score] of [
-    ["score", 99, null, 99],
-    ["likes", false, false, 10],
-  ]) {
+test("rollback preserves a changed server vote pair even when one field matches the optimistic value", async (t) => {
+  for (const serverVote of [{ likes: true, score: 99 }, { likes: false, score: 11 }]) {
     const client = clientFor(t);
-    const key = ["feed", "partial-vote"];
+    const key = ["feed", "refetched-vote"];
     client.setQueryData(key, feed([post("t3_target")], "home"));
     const context = await beginFeedAction(client, "t3_target", { property: "likes", value: 1 });
-    client.setQueryData(key, (current) => ({
-      ...current,
-      pages: current.pages.map((page) => ({
-        ...page,
-        filtered: page.filtered.map((entry) => ({
-          ...entry, data: { ...entry.data, [changedField]: changedValue },
-        })),
-      })),
-    }));
+    await client.fetchQuery({
+      queryKey: key,
+      queryFn: async () => feed([post("t3_target", serverVote)], "server"),
+    });
+    const confirmed = client.getQueryData(key);
     await rollbackFeedAction(client, context);
-    assert.equal(readPost(client, key).likes, likes);
-    assert.equal(readPost(client, key).score, score);
+    assert.equal(client.getQueryData(key), confirmed);
+    assert.equal(readPost(client, key).likes, serverVote.likes);
+    assert.equal(readPost(client, key).score, serverVote.score);
   }
 });
 
-test("partial vote rollback restores absent likes without replacing a newer score", async (t) => {
+test("rollback does not delete a refetched vote whose likes were originally absent", async (t) => {
   const client = clientFor(t);
   const key = ["feed", "absent-vote"];
   client.setQueryData(key, feed([{ kind: "t3", data: { name: "t3_target", score: 10 } }], "home"));
   const context = await beginFeedAction(client, "t3_target", { property: "likes", value: 1 });
-  client.setQueryData(key, (current) => ({
-    ...current,
-    pages: current.pages.map((page) => ({
-      ...page,
-      filtered: page.filtered.map((entry) => ({ ...entry, data: { ...entry.data, score: 99 } })),
-    })),
-  }));
+  await client.fetchQuery({
+    queryKey: key,
+    queryFn: async () => feed([post("t3_target", { likes: true, score: 99 })], "server"),
+  });
   await rollbackFeedAction(client, context);
-  assert.equal(Object.hasOwn(readPost(client, key), "likes"), false);
+  assert.equal(readPost(client, key).likes, true);
   assert.equal(readPost(client, key).score, 99);
 });
 
