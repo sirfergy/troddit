@@ -4,6 +4,8 @@ import { BiHide } from "react-icons/bi";
 import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import useMutate from "../hooks/useMutate";
 import { useMainContext } from "../MainContext";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { postActionKey } from "../../lib/feedActions";
 
 const HideButton = ({
   id,
@@ -20,21 +22,21 @@ const HideButton = ({
   const context: any = useMainContext();
   const [isHidden, setIsHidden] = useState(false);
   useEffect(() => {
-    hidden && setIsHidden(true);
-    return () => {
-      setIsHidden(false);
-    };
-  }, [hidden]);
+    setIsHidden(!!hidden);
+  }, [hidden, id]);
 
-  const { hideMutation } = useMutate();
+  const { hideMutation } = useMutate(id);
+  const queryClient = useQueryClient();
+  const mutationKey = postActionKey("hide", id);
+  const pending = useIsMutating({ mutationKey }) > 0;
 
   useEffect(() => {
-    setIsHidden(hidden);
-  }, [hideMutation.isError]);
+    if (hideMutation.isError) setIsHidden(!!hidden);
+  }, [hideMutation.isError, hidden, id]);
 
   const hide = async () => {
+    if (queryClient.isMutating({ mutationKey })) return;
     if (session) {
-      let pstatus = isHidden;
       setIsHidden((s) => !s);
       hideMutation.mutate({ id: id, isHidden: isHidden });
     } else if (!loading) {
@@ -50,9 +52,12 @@ const HideButton = ({
     (isHidden ? " text-th-red" : " ");
 
   return (
-    <div
+    <button
+      type="button"
+      disabled={pending}
+      aria-label={isHidden ? "unhide" : "hide"}
       className={
-        "flex flex-row items-center  " +
+        "flex flex-row items-center disabled:opacity-50 disabled:cursor-wait " +
         (menu ? " pr-4 pl-2 py-2.5 md:py-1 " : " space-x-1 ")
       }
       onClick={(e) => {
@@ -72,12 +77,12 @@ const HideButton = ({
       )}
 
       {!isPortrait && (
-        <h1 className={(post ? "hidden " : "") + (!isPortrait && !row ? " md:block " : "") + (row ? "hidden sm:block " : "")}>
+        <span className={(post ? "hidden " : "") + (!isPortrait && !row ? " md:block " : "") + (row ? "hidden sm:block " : "")}>
           {isHidden ? "Unhide" : "Hide"}
           {menu ? " Post" : ""}
-        </h1>
+        </span>
       )}
-    </div>
+    </button>
   );
 };
 

@@ -6,6 +6,8 @@
 - Inline video previews, Tenor GIF embeds, and Imgur album/gallery embeds with on-demand loading and original-link fallbacks.
 
 ### Fixes
+- Restore failed save, hide, and vote actions without corrupting feeds or undoing unrelated actions; reset button state and vote scores on failure.
+- Keep unrelated feed requests running and target rollback when feed items move or individual vote fields change.
 - Preserve the open view and unsent replies when connectivity returns instead of automatically reloading.
 - Preserve formatted media links and keep preview controls outside the link.
 - Apply saved image-expansion preferences after they load without overriding manually opened or collapsed previews.

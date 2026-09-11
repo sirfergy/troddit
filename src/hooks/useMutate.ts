@@ -3,6 +3,10 @@ import { useRouter } from "next/router";
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fixCommentFormat } from "../../lib/utils";
+import { beginFeedAction, postActionKey, rollbackFeedAction } from "../../lib/feedActions";
+import type { FeedActionContext, VoteValue } from "../../lib/feedActions";
+import toast from "react-hot-toast";
+import ToastCustom from "../components/toast/ToastCustom";
 import {
   deleteLink,
   editUserText,
@@ -13,65 +17,25 @@ import {
   saveLink,
 } from "../RedditAPI";
 
-const useMutate = () => {
+const useMutate = (postId?: string) => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  interface Change {
-    property: string;
-    value: any;
-    increment?: any;
-  }
-  const optimisticUpdate = async (
-    key: string[],
-    id: string,
-    change: Change
-  ) => {
-    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries();
-    // Snapshot the previous value
-    const previousData = queryClient.getQueriesData(key);
-
-    // Optimistically update to the new value
-    queryClient.setQueriesData(["feed"], (oldData: any) => {
-      let newData = oldData;
-      if (newData) {
-        let newPages = oldData?.pages?.map((page) => {
-          return {
-            ...page,
-            filtered: page?.filtered?.map((post) => {
-              if (id === post?.data?.name) {
-                post.data[change.property] = change.value;
-                if (change.property === "likes") {
-                  post["data"]["score"] =
-                    post["data"]["score"] + (change?.increment ?? 0);
-                }
-              }
-              return post;
-            }),
-          };
-        });
-        newData = { ...newData, pages: newPages };
-      }
-      return newData;
+  const actionFailed = async (context: FeedActionContext | undefined, message: string) => {
+    await rollbackFeedAction(queryClient, context);
+    toast.custom((t) => React.createElement(ToastCustom, { t, message, mode: "error" }), {
+      id: "post-action-error", duration: 4000,
     });
-
-    return { previousData };
   };
 
   const voteMutation = useMutation(
-    ({ vote, id, increment }: any) => postVote({dir: vote, id: id}),
+    ({ vote, id }: { vote: VoteValue; id: string; increment: number }) => postVote({dir: vote, id: id}),
     {
-      onMutate: async (update) => {
-        if (update.id.substring(0, 3) === "t3_") {
-          return optimisticUpdate(["feed"], update.id, {
-            property: "likes",
-            value: update.vote,
-            increment: update.increment,
-          });
-        }
-      },
+      mutationKey: postActionKey("vote", postId),
+      onMutate: (update) => beginFeedAction(queryClient, update.id, {
+        property: "likes", value: update.vote,
+      }),
       onSuccess: (data: any, variables) => {
         if (data.id.substring(0, 3) === "t3_") {
           if (session?.user?.name) {
@@ -144,25 +108,17 @@ const useMutate = () => {
             : queryClient.invalidateQueries(["thread"]);
         }
       },
-      onError: (err, update, context: any) => {
-        if (update.id.substring(0, 3) === "t3_") {
-          queryClient.setQueriesData(["feed"], context.previousData);
-        }
-      },
+      onError: (err, update, context) => actionFailed(context, "Unable to vote. Please try again."),
     }
   );
 
   const saveMutation = useMutation(
-    ({ id, isSaved }: any) => saveLink({id, isSaved, category: ""}),
+    ({ id, isSaved }: { id: string; isSaved: boolean }) => saveLink({id, isSaved, category: ""}),
     {
-      onMutate: async (update) => {
-        if (update.id.substring(0, 3) === "t3_") {
-          return optimisticUpdate(["feed"], update.id, {
-            property: "saved",
-            value: update.isSaved ? false : true,
-          });
-        }
-      },
+      mutationKey: postActionKey("save", postId),
+      onMutate: (update) => beginFeedAction(queryClient, update.id, {
+        property: "saved", value: !update.isSaved,
+      }),
       onSuccess: (data: any) => {
         if (
           data?.id?.substring(0, 3) === "t3_" &&
@@ -177,23 +133,17 @@ const useMutate = () => {
           ]);
         }
       },
-      onError: (err, update, context: any) => {
-        if (update.id.substring(0, 3) === "t3_") {
-          queryClient.setQueriesData(["feed"], context.previousData);
-        }
-      },
+      onError: (err, update, context) => actionFailed(context, "Unable to save. Please try again."),
     }
   );
 
   const hideMutation = useMutation(
-    ({ id, isHidden }: any) => hideLink({id, isHidden}),
+    ({ id, isHidden }: { id: string; isHidden: boolean }) => hideLink({id, isHidden}),
     {
-      onMutate: async (update) => {
-        return optimisticUpdate(["feed"], update.id, {
-          property: "hidden",
-          value: update.isHidden ? false : true,
-        });
-      },
+      mutationKey: postActionKey("hide", postId),
+      onMutate: (update) => beginFeedAction(queryClient, update.id, {
+        property: "hidden", value: !update.isHidden,
+      }),
       onSuccess: (data: any) => {
         if (
           session?.user?.name &&
@@ -207,9 +157,7 @@ const useMutate = () => {
           ]);
         }
       },
-      onError: (err, update, context: any) => {
-        queryClient.setQueriesData(["feed"], context.previousData);
-      },
+      onError: (err, update, context) => actionFailed(context, "Unable to hide. Please try again."),
     }
   );
 
