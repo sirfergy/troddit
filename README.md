@@ -83,6 +83,10 @@ To contribute create a branch and submit a PR!
 
 Run `npm test` with Node.js 24 or newer for the regression tests. Run `npm run typecheck` to check all TypeScript sources under `src/`, `lib/`, and `types/`, and `npm run lint` and `npm run build` for the application checks.
 
+Project-scoped [Impeccable tooling and the initial interface audit](.github/impeccable/README.md)
+are available for Copilot. Automatic edit hooks are disabled; audits report findings
+without applying UI changes.
+
 ### Environment Variables
 
 To use login functionality the following environment variables need to be defined in a .env.local file placed in the root directory:

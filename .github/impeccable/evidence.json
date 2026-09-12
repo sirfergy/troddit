@@ -1,0 +1,108 @@
+{
+  "application": {
+    "revision": "2a36ceb7491544a9437753f71310bc3a5590c1cc",
+    "tree": "accc72af45545c4f4a2e551b4fd6d102ac31bb03",
+    "version": "0.21.1",
+    "productionBuildId": "_6KEXf6Va_veBnsx7g4qe"
+  },
+  "method": {
+    "skillVersion": "4.3.1",
+    "engineVersion": "0.1.5",
+    "sourceDetectorCommand": ".github/skills/impeccable/scripts/impeccable detect --json src styles tailwind.config.js",
+    "sourceDetectorExitCode": 0,
+    "sourceDetectorFindings": 0,
+    "positiveControlExitCode": 2,
+    "positiveControlFindings": 6,
+    "browserEngines": ["Chromium", "WebKit"],
+    "desktopViewport": [1440, 900],
+    "mobileViewport": [390, 664],
+    "themes": ["light", "dark"],
+    "initialStatesPerEngine": 13,
+    "targetedConfirmationStatesPerEngine": 5,
+    "syntheticRedditData": true,
+    "physicalDeviceTested": false,
+    "authenticatedFlowsTested": false,
+    "mediaConfirmationUsesPageLevelRequestMocks": true,
+    "confirmationCapturedAtUtc": "2026-09-12T01:00:05Z"
+  },
+  "settingsNavigation": {
+    "mobileTabsWithEmptyAccessibleNames": 7,
+    "tabPanelElements": 0,
+    "tabsWithAriaControls": 0,
+    "selectedAfterTwoArrowDownKeys": "Media",
+    "nextTabFocusLabel": "theme options",
+    "nextTabFocusSection": "Appearance",
+    "confirmedInBothEngines": true
+  },
+  "contrast": [
+    {
+      "context": "Light feed metadata and comment-count links",
+      "foregroundRgb": [156, 163, 175],
+      "backgroundRgb": [248, 250, 252],
+      "fontSizesPx": [12, 14],
+      "ratio": 2.427
+    },
+    {
+      "context": "Dark feed metadata and comment-count links",
+      "foregroundRgb": [107, 114, 128],
+      "backgroundRgb": [26, 26, 27],
+      "fontSizesPx": [12, 14],
+      "ratio": 3.597
+    },
+    {
+      "context": "Unselected desktop Settings labels, light",
+      "fontSizePx": 16,
+      "opacity": 0.5,
+      "ratio": 3.357
+    },
+    {
+      "context": "Unselected desktop Settings labels, dark",
+      "fontSizePx": 16,
+      "opacity": 0.5,
+      "ratio": 4.386
+    }
+  ],
+  "optionsKeyboardFocus": {
+    "focused": true,
+    "outline": "rgba(0, 0, 0, 0) solid 2px",
+    "boxShadow": "none",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "otherObservedStylesChanged": false,
+    "confirmedInBothEngines": true
+  },
+  "largeTextStressTest": {
+    "rootFontSizePx": 32,
+    "scalePercent": 200,
+    "viewportWidthPx": 390,
+    "documentScrollWidthPx": 390,
+    "htmlOverflowX": "hidden",
+    "bodyOverflowX": "hidden",
+    "filtersButtonLeftPx": 501.53125,
+    "optionsButtonLeftPx": 589.53125,
+    "confirmedInBothEngines": true
+  },
+  "touchTargets": [
+    {"context": "Feed vote buttons", "widthPx": 20, "heightPx": 20},
+    {"context": "Feed post-options button", "widthPx": 18, "heightPx": 26},
+    {"context": "Thread refresh-comments button", "widthPx": 20, "heightPx": 20},
+    {"context": "Main options button", "widthPx": 40, "heightPx": 36}
+  ],
+  "aboutHydration": {
+    "reactErrorCodes": [418, 423],
+    "confirmedInBothEngines": true,
+    "source": "src/pages/about.tsx:47-56"
+  },
+  "positiveChecks": {
+    "defaultViewportDocumentOverflow": false,
+    "themeSwitchingObserved": true,
+    "imageAltTextUsesPostTitles": true,
+    "updatesDialogShiftTabWrap": "Reload app...",
+    "updatesDialogTabWrap": "Close updates",
+    "updatesDialogEscapeCloses": true,
+    "synthesizedHorizontalTouchCancel": {
+      "dragged": "translate3d(200px, 0px, 0px)",
+      "restored": "translate3d(0px, 0px, 0px)",
+      "viewerRemainedOpen": true
+    }
+  }
+}

@@ -51,3 +51,7 @@ yarn-error.log*
 
 #other
 .secrets
+
+# Impeccable downloads its platform-specific engine locally.
+/.github/skills/impeccable/scripts/bin/
+/.impeccable/config.local.json
