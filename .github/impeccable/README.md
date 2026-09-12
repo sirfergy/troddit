@@ -5,7 +5,7 @@ and its four companion agents are vendored unchanged, with licensing and
 provenance retained. No automatic edit hooks or CI quality gate were enabled.
 Application code and dependencies are unchanged.
 
-## Use
+## Interactive use
 
 Start Copilot CLI from this checkout, then use:
 
@@ -34,6 +34,24 @@ also checks implementation and rendered behavior.
 
 [`PRODUCT.md`](../../PRODUCT.md) records the product context confirmed by the
 maintainer. No new visual direction or `DESIGN.md` was invented.
+
+## Copilot reviews
+
+[Repository review instructions](../copilot-instructions.md) require Copilot to
+read the vendored skill and audit playbook for changes affecting Troddit's UI.
+Reviews stay read-only and focus on concrete, PR-relevant findings rather than
+rerunning the historical whole-app audit or treating style heuristics as bugs.
+
+The detector is used only when a trusted native engine is already provisioned
+and the review host permits execution. These instructions do not install a
+binary, grant network access, or enable tools in a restricted review environment.
+The launcher can download an engine, so reviewers must not use it to bootstrap
+tools. Missing detector or rendered evidence is a coverage limitation, not a pass.
+
+Review mode does not use Live. The pinned upstream Live helpers have known
+storage/session limitations: blocked browser storage can interrupt initialization,
+and project changes can reuse stale scroll state. Those optional interactive
+helpers remain unmodified; they are separate from the read-only review path.
 
 ## Initial audit
 
