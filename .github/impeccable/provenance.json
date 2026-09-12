@@ -1,0 +1,18 @@
+{
+  "upstreamRepository": "https://github.com/pbakaus/impeccable",
+  "upstreamTag": "skill-v4.3.1",
+  "upstreamCommit": "cd12f8660e2dde57b9615c8a6b8ea674101f9cfc",
+  "provider": "github",
+  "scope": "project",
+  "installerVersion": "4.0.1",
+  "skillVersion": "4.3.1",
+  "engineVersionUsed": "0.1.5",
+  "verifiedSourceFiles": 57,
+  "engineVerification": {
+    "platform": "darwin-arm64",
+    "sha256": "0d48b6e16aa97664fdbe607d5da9ae320e389a1843e0ff1328f8c2530530320d",
+    "release": "engine-v0.1.5"
+  },
+  "automaticHooksInstalled": false,
+  "platformBinariesTracked": false
+}
