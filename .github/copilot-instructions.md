@@ -31,7 +31,11 @@ touch, contrast, or performance check ran without the corresponding evidence.
 
 Run `detect --json` on relevant changed UI sources only when a trusted native
 engine matching `.github/skills/impeccable/scripts/VERSION` is already provisioned
-and execution is permitted. Invoke that engine directly. Do not use npx,
+and execution is permitted. The dedicated CCR setup workflow provisions
+`/usr/local/bin/impeccable-engine` on Linux. Run from the checkout root with
+`IMPECCABLE_SKILL_DIR=.github/skills/impeccable` so the native engine can locate
+the pinned skill resources. Check `engine-probe` before relying on it.
+Invoke the native engine directly. Do not use npx,
 installers, updates, or the auto-downloading repository launcher to provision
 tools during review. If unavailable, use the vendored audit guidance and
 existing project documents without the detector; disclose that coverage limit
@@ -40,6 +44,9 @@ in the review summary when the host supports one.
 For detector output, exit 0 or 2 means a completed scan; exit 1 means an incomplete
 scan. Missing or malformed JSON is unavailable evidence. Zero findings is not
 proof that the broader UI audit passed.
+
+A setup failure can still leave Copilot running without the engine. Do not infer
+tool availability or actual detector use merely from the presence of the YAML.
 
 ## Report actionable PR findings
 

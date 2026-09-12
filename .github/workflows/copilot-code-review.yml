@@ -1,0 +1,98 @@
+name: Copilot Code Review Setup
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/copilot-code-review.yml
+      - .github/skills/impeccable/scripts/VERSION
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/copilot-code-review.yml
+      - .github/skills/impeccable/scripts/VERSION
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Install verified Impeccable engine
+        shell: bash
+        env:
+          ENGINE_VERSION: "0.1.5"
+          ENGINE_SHA256: cf5231a4b1ae66996c85b033800b1dad0797e590eae2f21ef2579430af187f19
+        run: |
+          set -euo pipefail
+          if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
+            echo "::error::This engine pin requires Linux x86-64."
+            exit 1
+          fi
+          recorded_version="$(tr -d '[:space:]' < .github/skills/impeccable/scripts/VERSION)"
+          if [[ "$recorded_version" != "$ENGINE_VERSION" ]]; then
+            echo "::error::Update the workflow engine version, URL, and checksum with the vendored VERSION."
+            exit 1
+          fi
+
+          binary="$(mktemp)"
+          trap 'rm -f "$binary"' EXIT
+          curl --fail --show-error --silent --location \
+            --retry 3 --retry-delay 2 --retry-max-time 120 \
+            --connect-timeout 20 --max-time 120 --max-redirs 5 \
+            https://github.com/pbakaus/impeccable/releases/download/engine-v0.1.5/impeccable-linux-x64 \
+            --output "$binary"
+          printf '%s  %s\n' "$ENGINE_SHA256" "$binary" | sha256sum --check --strict
+          sudo install -m 0755 "$binary" /usr/local/bin/impeccable-engine
+
+      - name: Verify native engine and detector
+        shell: bash
+        env:
+          IMPECCABLE_SKILL_DIR: .github/skills/impeccable
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import subprocess
+          import tempfile
+
+          engine = "/usr/local/bin/impeccable-engine"
+          probe = subprocess.run(
+              [engine, "engine-probe"], check=True, capture_output=True,
+              text=True, timeout=10,
+          )
+          if probe.stdout.strip() != "impeccable-engine 0.1.5":
+              raise SystemExit("Unexpected Impeccable engine identity")
+          print(probe.stdout.strip())
+
+          with tempfile.NamedTemporaryFile(mode="w", suffix=".html") as fixture:
+              fixture.write("""<!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><title>Detector probe</title>
+          <style>h1 { background: linear-gradient(90deg, #a855f7, #06b6d4);
+          background-clip: text; color: transparent; }</style></head>
+          <body><h1>Detector probe</h1></body></html>""")
+              fixture.flush()
+              result = subprocess.run(
+                  [engine, "detect", "--no-config", "--json", fixture.name],
+                  capture_output=True, text=True, timeout=30,
+              )
+          if result.returncode != 2:
+              raise SystemExit(
+                  f"Expected detector findings (exit 2), got {result.returncode}: "
+                  f"{result.stderr}"
+              )
+          findings = json.loads(result.stdout)
+          if not isinstance(findings, list) or not any(
+              isinstance(item, dict) and item.get("antipattern") == "gradient-text"
+              for item in findings
+          ):
+              raise SystemExit("Detector did not identify the positive control")
+          print(f"Impeccable detector smoke test passed ({len(findings)} findings).")
+          PY

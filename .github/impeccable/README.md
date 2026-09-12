@@ -43,8 +43,26 @@ Reviews stay read-only and focus on concrete, PR-relevant findings rather than
 rerunning the historical whole-app audit or treating style heuristics as bugs.
 
 The detector is used only when a trusted native engine is already provisioned
-and the review host permits execution. These instructions do not install a
-binary, grant network access, or enable tools in a restricted review environment.
+and the review host permits execution. The
+[dedicated CCR setup workflow](../workflows/copilot-code-review.yml) installs
+the Linux x86-64 engine before the review. It pins version `0.1.5` and its
+SHA-256, checks the vendored `scripts/VERSION`, verifies the download before
+installation, and runs an identity probe plus a fixed detector positive control.
+It does not execute repository scripts or reinstall the vendored skill.
+
+The native engine is installed as `/usr/local/bin/impeccable-engine`, outside
+the checkout and under a distinct name from the auto-downloading launcher.
+Reviewers invoke it directly from the checkout root with
+`IMPECCABLE_SKILL_DIR=.github/skills/impeccable`; no setup-workspace absolute path
+or Actions environment-variable handoff is required.
+
+The workflow's PR/manual run validates installation and execution on Linux.
+It is not evidence that a CCR review invoked the detector. After merging the
+workflow, inspect a real review's setup/session logs to establish that handoff.
+If a setup step fails, Copilot can continue without the engine; availability
+and review-host permissions must still be checked.
+
+Review instructions do not grant network access or enable restricted tools.
 The launcher can download an engine, so reviewers must not use it to bootstrap
 tools. Missing detector or rendered evidence is a coverage limitation, not a pass.
 
