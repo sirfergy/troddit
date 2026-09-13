@@ -48,7 +48,7 @@ and the review host permits execution. The
 the Linux x86-64 engine before the review. It pins version `0.1.5` and its
 SHA-256, checks the vendored `scripts/VERSION`, verifies the download before
 installation, and runs an identity probe plus a fixed detector positive control.
-It does not execute repository scripts or reinstall the vendored skill.
+It does not invoke the vendored launchers or reinstall the vendored skill.
 
 The native engine is installed as `/usr/local/bin/impeccable-engine`, outside
 the checkout and under a distinct name from the auto-downloading launcher.
@@ -61,6 +61,17 @@ It is not evidence that a CCR review invoked the detector. After merging the
 workflow, inspect a real review's setup/session logs to establish that handoff.
 If a setup step fails, Copilot can continue without the engine; availability
 and review-host permissions must still be checked.
+
+The setup also probes an end-of-job logging channel using a commit-pinned action.
+Match `IMPECCABLE_TRACE_PROBE_MAIN` and `IMPECCABLE_TRACE_PROBE_POST` by probe ID
+in the actual reviewer job log, and verify that the post marker follows the
+reviewer work. This checks that action state and a temporary file survive until
+cleanup; it does not wrap the engine or establish detector invocation. A missing
+post marker is an unverified collection path, not evidence of zero detector calls.
+`IMPECCABLE_TRACE_PROBE_POST_ENTERED` distinguishes callback entry from successful
+state verification. The probe is left under `RUNNER_TEMP` for runner cleanup, so
+an unrelated cleanup failure cannot hide the logging evidence.
+Changes to the probe require refreshing its action commit pin in the workflow.
 
 Review instructions do not grant network access or enable restricted tools.
 The launcher can download an engine, so reviewers must not use it to bootstrap

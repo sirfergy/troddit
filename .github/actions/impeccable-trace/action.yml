@@ -1,0 +1,7 @@
+name: Probe Impeccable post-review logging
+description: Verify that the review job can collect diagnostics in an action post step.
+runs:
+  using: node24
+  main: main.cjs
+  post: post.cjs
+  post-if: always()
