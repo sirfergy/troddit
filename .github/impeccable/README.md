@@ -50,9 +50,11 @@ SHA-256, checks the vendored `scripts/VERSION`, verifies the download before
 installation, and runs an identity probe plus a fixed detector positive control.
 It does not invoke the vendored launchers or reinstall the vendored skill.
 
-The native engine is installed as `/usr/local/bin/impeccable-engine`, outside
+The provisioned entrypoint is `/usr/local/bin/impeccable-engine`, outside
 the checkout and under a distinct name from the auto-downloading launcher.
-Reviewers invoke it directly from the checkout root with
+It forwards to the checksum-verified native engine at
+`/usr/local/lib/impeccable-trace/native`. Reviewers invoke the provisioned
+entrypoint from the checkout root with
 `IMPECCABLE_SKILL_DIR=.github/skills/impeccable`; no setup-workspace absolute path
 or Actions environment-variable handoff is required.
 
@@ -62,16 +64,46 @@ workflow, inspect a real review's setup/session logs to establish that handoff.
 If a setup step fails, Copilot can continue without the engine; availability
 and review-host permissions must still be checked.
 
-The setup also probes an end-of-job logging channel using a commit-pinned action.
-Match `IMPECCABLE_TRACE_PROBE_MAIN` and `IMPECCABLE_TRACE_PROBE_POST` by probe ID
-in the actual reviewer job log, and verify that the post marker follows the
-reviewer work. This checks that action state and a temporary file survive until
-cleanup; it does not wrap the engine or establish detector invocation. A missing
-post marker is an unverified collection path, not evidence of zero detector calls.
-`IMPECCABLE_TRACE_PROBE_POST_ENTERED` distinguishes callback entry from successful
-state verification. The probe is left under `RUNNER_TEMP` for runner cleanup, so
-an unrelated cleanup failure cannot hide the logging evidence.
-Changes to the probe require refreshing its action commit pin in the workflow.
+CCR loads setup configuration from the repository's default branch. An unmerged
+PR's standalone workflow validates the candidate configuration, but actual
+reviews continue to use the default-branch version until it is merged.
+
+### Native invocation logs
+
+The commit-pinned tracing action runs last, after the existing engine checks.
+It compares the native engine and a candidate wrapper on a probe and a fixed
+HTML scan, discards those validation records, arms the trace, then atomically
+replaces the entrypoint. Failed validation leaves the original entrypoint intact.
+Arguments and binary stdin/stdout/stderr pass through; native exit codes and
+signals are preserved. Review invocations opt out of Impeccable telemetry and
+update checks.
+
+In the actual reviewer job log, `IMPECCABLE_TRACE_ARMED` identifies activation.
+After reviewer processing, the action's post step prints
+`IMPECCABLE_NATIVE_INVOCATION` records and an `IMPECCABLE_TRACE_SUMMARY`.
+Records contain run/call identifiers, command category, timing, process IDs,
+and completion or launch-failure status. They do not contain arguments, target
+paths, source code, raw environment dumps, or native output. Help/version calls
+are kept separate from detector commands.
+
+A paired completion records that the native process ran and finished, including
+nonzero exits or signal termination. A start without completion or a launch
+failure does not establish a completed scan. Detector exits `0` and `2` indicate
+a completed detector command, not that the UI is free of defects. Because targets
+and output are not logged, these records do not establish which files were
+scanned, which reviewer invoked the tool, or whether it influenced a comment.
+
+This is best-effort, runner-writable diagnostic logging, not tamper-proof
+attestation. A missing or malformed trace, unfinished calls, or a recorded
+logging failure is reported as incomplete. `no_call_evidence` means zero
+recorded calls, not proof of no execution: failures may prevent recording, and
+direct invocation of the native copy bypasses the wrapper. Logging errors warn
+without preventing native execution. Traces remain under `RUNNER_TEMP` for
+runner cleanup.
+
+Changes to the action require refreshing its full commit pin in the workflow.
+The native checksum input must match the engine download pin. Tracer tests run
+in the Ubuntu CI job separately from the application's `npm test` command.
 
 Review instructions do not grant network access or enable restricted tools.
 The launcher can download an engine, so reviewers must not use it to bootstrap

@@ -1,5 +1,9 @@
-name: Probe Impeccable post-review logging
-description: Verify that the review job can collect diagnostics in an action post step.
+name: Log Impeccable native invocations
+description: Collect bounded native invocation metadata after the review job.
+inputs:
+  sha256:
+    description: Expected SHA-256 of the already installed native engine.
+    required: true
 runs:
   using: node24
   main: main.cjs

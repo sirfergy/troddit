@@ -1,34 +1,44 @@
-const fs = require("node:fs");
-const path = require("node:path");
-const { requiredEnv, runIdentity } = require("./main.cjs");
+const { ENTRYPOINT, NATIVE, requiredEnv, runIdentity } = require("./main.cjs");
+const { TraceError, readTrace } = require("./trace.cjs");
 
-console.log("IMPECCABLE_TRACE_PROBE_POST_ENTERED");
+console.log("IMPECCABLE_TRACE_POST_ENTERED");
 
-const identity = runIdentity();
-const root = fs.realpathSync(requiredEnv("RUNNER_TEMP"));
-const filename = requiredEnv("STATE_impeccable_probe_file");
-const probeId = requiredEnv("STATE_impeccable_probe_id");
-const directory = path.dirname(filename);
-
-if (
-  !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(probeId) ||
-  path.dirname(directory) !== root ||
-  !/^impeccable-trace-probe-[A-Za-z0-9]{6}$/.test(path.basename(directory)) ||
-  path.basename(filename) !== "probe-id" ||
-  !fs.lstatSync(directory).isDirectory() ||
-  !fs.lstatSync(filename).isFile() ||
-  fs.statSync(filename).size !== probeId.length + 1
-) {
-  throw new Error("Invalid Impeccable logging probe state");
+function collect() {
+  const identity = runIdentity();
+  const filename = requiredEnv("STATE_impeccable_trace_file");
+  const expected = {
+    ...identity,
+    trace_id: requiredEnv("STATE_impeccable_trace_id"),
+    native_sha256: requiredEnv("STATE_impeccable_native_sha256"),
+    wrapper_sha256: requiredEnv("STATE_impeccable_wrapper_sha256"),
+  };
+  const result = readTrace({
+    root: requiredEnv("RUNNER_TEMP"), filename, expected, entrypoint: ENTRYPOINT, native: NATIVE,
+  });
+  for (const call of result.calls) {
+    console.log("IMPECCABLE_NATIVE_INVOCATION " + JSON.stringify({ ...identity, trace_id: expected.trace_id, ...call }));
+  }
+  console.log("IMPECCABLE_TRACE_SUMMARY " + JSON.stringify({
+    ...expected,
+    outcome: result.outcome,
+    recorded_calls: result.calls.length,
+    recorded_completions: result.calls.filter((call) => call.status === "completed").length,
+    completed_detect_commands: result.calls.filter((call) =>
+      call.command === "detect" && call.status === "completed" && [0, 2].includes(call.return_code)
+    ).length,
+    issues: result.issues,
+    coverage: "best_effort_configured_entrypoint_after_validation",
+  }));
+  if (result.issues.length) {
+    console.error("::warning::Impeccable invocation logging is incomplete; counts are observed records only.");
+  }
 }
-if (fs.readFileSync(filename, "utf8") !== `${probeId}\n`) {
-  throw new Error("Impeccable logging probe state did not survive unchanged");
-}
 
-console.log("IMPECCABLE_TRACE_PROBE_POST " + JSON.stringify({
-  ...identity,
-  probe_id: probeId,
-  at: new Date().toISOString(),
-  shared_file_verified: true,
-  native_path_present: fs.existsSync("/usr/local/bin/impeccable-engine"),
-}));
+try {
+  collect();
+} catch (error) {
+  const reason = error instanceof TraceError ? error.code : "collector_unavailable";
+  console.log("IMPECCABLE_TRACE_SUMMARY " + JSON.stringify({ outcome: "incomplete", reason }));
+  console.error("::warning::Impeccable invocation logging is unavailable; no execution count can be established.");
+  if (!(error instanceof TraceError) && !Number.isInteger(error.errno)) process.exitCode = 1;
+}

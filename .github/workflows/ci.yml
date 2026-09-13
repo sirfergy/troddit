@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test Impeccable tracing
+        run: node --test .github/actions/impeccable-trace/trace.test.cjs
+
       - name: Test
         run: npm test
 

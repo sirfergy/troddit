@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+import errno
+import json
+import os
+import signal
+import stat
+import subprocess
+import sys
+import time
+import uuid
+
+# The pinned setup action renders these string literals before installation.
+NATIVE = __IMPECCABLE_NATIVE__
+TRACE_FILE = __IMPECCABLE_TRACE_FILE__
+TRACE_ID = __IMPECCABLE_TRACE_ID__
+
+
+def diagnostic(message):
+    try:
+        os.write(2, message)
+    except OSError:
+        pass  # A closed diagnostic stream must not prevent native execution.
+
+
+def record(fields):
+    data = (json.dumps(
+        {"trace_id": TRACE_ID, "at_ms": int(time.time() * 1000), **fields},
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ) + "\n").encode("ascii")
+    try:
+        if len(data) > 4096:
+            raise OSError(errno.EOVERFLOW, "trace record too large")
+        descriptor = os.open(TRACE_FILE, os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "ab", buffering=0) as output:
+            if not stat.S_ISREG(os.fstat(output.fileno()).st_mode):
+                raise OSError(errno.EINVAL, "trace destination is not a regular file")
+            if output.write(data) != len(data):
+                raise OSError(errno.EIO, "short trace write")
+    except OSError:
+        try:
+            marker = os.open(
+                TRACE_FILE + ".degraded",
+                os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
+                0o600,
+            )
+            os.close(marker)
+        except OSError:
+            pass  # The post collector never treats an absent flag as complete coverage.
+        diagnostic(b"Impeccable tracing is incomplete; native execution continues.\n")
+
+
+def main():
+    args = sys.argv[1:]
+    command = args[0] if args and args[0] in {"engine-probe", "detect", "context"} else "other"
+    if any(arg in {"--help", "-h", "--version", "-V"} for arg in args):
+        command = "info"
+    call_id = str(uuid.uuid4())
+    record({"event": "start", "call_id": call_id, "command": command, "pid": os.getpid()})
+
+    child = None
+    pending = []
+
+    def forward(signum, _frame):
+        if child is None:
+            pending.append(signum)
+        else:
+            child.send_signal(signum)
+
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(signum, forward)
+    environment = dict(os.environ, IMPECCABLE_NO_TELEMETRY="1", IMPECCABLE_NO_UPDATE_CHECK="1")
+    try:
+        child = subprocess.Popen(
+            [NATIVE, *args], stdin=None, stdout=None, stderr=None, env=environment
+        )
+    except OSError as error:
+        record({"event": "launch_error", "call_id": call_id, "error_number": error.errno or errno.EIO})
+        diagnostic(b"Unable to launch the verified Impeccable engine.\n")
+        return 127 if error.errno == errno.ENOENT else 126
+
+    for signum in pending:
+        child.send_signal(signum)
+    return_code = child.wait()
+    record({
+        "event": "complete",
+        "call_id": call_id,
+        "native_pid": child.pid,
+        "return_code": return_code,
+    })
+    if return_code < 0:
+        signum = -return_code
+        if signum not in (signal.SIGKILL, signal.SIGSTOP):
+            signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
+        return 128 + signum
+    return return_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())
