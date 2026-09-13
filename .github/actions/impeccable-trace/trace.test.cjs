@@ -184,11 +184,15 @@ test("concurrent invocations produce complete, noninterleaved record pairs", asy
   assert.ok(trace.calls.every((call) => call.return_code === 0));
 });
 
-for (const signalName of ["SIGTERM", "SIGINT", "SIGHUP"]) {
+for (const signalName of ["SIGTERM", "SIGINT", "SIGHUP", "SIGQUIT"]) {
   test(`forwards ${signalName} and preserves the native termination result`, { timeout: 10000 }, async (t) => {
     const f = fixture(t);
     const run = (executable, args) => new Promise((resolve, reject) => {
-      const child = spawn(executable, args);
+      const child = spawn("python3", [
+        "-c",
+        "import os,resource,sys; resource.setrlimit(resource.RLIMIT_CORE,(0,0)); os.execvp(sys.argv[1],sys.argv[1:])",
+        executable, ...args,
+      ]);
       child.stdin.end();
       child.stderr.resume();
       child.once("error", reject);

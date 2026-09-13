@@ -74,9 +74,10 @@ The commit-pinned tracing action runs last, after the existing engine checks.
 It compares the native engine and a candidate wrapper on a probe and a fixed
 HTML scan, discards those validation records, arms the trace, then atomically
 replaces the entrypoint. Failed validation leaves the original entrypoint intact.
-Arguments and binary stdin/stdout/stderr pass through; native exit codes and
-signals are preserved. Review invocations opt out of Impeccable telemetry and
-update checks.
+Arguments and binary stdin/stdout/stderr pass through. INT, TERM, HUP, and QUIT
+are forwarded; a native child's exit code or terminating signal is returned
+without generating a second core dump for the wrapper. Review invocations opt
+out of Impeccable telemetry and update checks.
 
 In the actual reviewer job log, `IMPECCABLE_TRACE_ARMED` identifies activation.
 After reviewer processing, the action's post step prints

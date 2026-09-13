@@ -2,6 +2,7 @@
 import errno
 import json
 import os
+import resource
 import signal
 import stat
 import subprocess
@@ -67,7 +68,7 @@ def main():
         else:
             child.send_signal(signum)
 
-    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT):
         signal.signal(signum, forward)
     environment = dict(os.environ, IMPECCABLE_NO_TELEMETRY="1", IMPECCABLE_NO_UPDATE_CHECK="1")
     try:
@@ -91,6 +92,8 @@ def main():
     })
     if return_code < 0:
         signum = -return_code
+        # The native already exited; do not create a second core for the wrapper.
+        resource.setrlimit(resource.RLIMIT_CORE, (0, resource.getrlimit(resource.RLIMIT_CORE)[1]))
         if signum not in (signal.SIGKILL, signal.SIGSTOP):
             signal.signal(signum, signal.SIG_DFL)
         os.kill(os.getpid(), signum)
