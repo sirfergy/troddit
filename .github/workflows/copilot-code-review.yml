@@ -99,5 +99,7 @@ jobs:
           print(f"Impeccable detector smoke test passed ({len(findings)} findings).")
           PY
 
-      - name: Probe post-review logging
-        uses: sirfergy/troddit/.github/actions/impeccable-trace@2269831a31f00ac40a7410861ab82926132de39a
+      - name: Enable native invocation logging
+        uses: sirfergy/troddit/.github/actions/impeccable-trace@a804a5f7a87dca8fe3ade9743d3bca22fe3b128b
+        with:
+          sha256: cf5231a4b1ae66996c85b033800b1dad0797e590eae2f21ef2579430af187f19
