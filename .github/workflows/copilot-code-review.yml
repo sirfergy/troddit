@@ -101,5 +101,7 @@ jobs:
 
       - name: Enable native invocation logging
         uses: sirfergy/troddit/.github/actions/impeccable-trace@a804a5f7a87dca8fe3ade9743d3bca22fe3b128b
+        env:
+          IMPECCABLE_SKILL_DIR: .github/skills/impeccable
         with:
           sha256: cf5231a4b1ae66996c85b033800b1dad0797e590eae2f21ef2579430af187f19
