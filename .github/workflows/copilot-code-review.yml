@@ -100,7 +100,7 @@ jobs:
           PY
 
       - name: Enable native invocation logging
-        uses: sirfergy/troddit/.github/actions/impeccable-trace@a804a5f7a87dca8fe3ade9743d3bca22fe3b128b
+        uses: sirfergy/troddit/.github/actions/impeccable-trace@21acf13ae7332dae5536f28f75ae06eeeb028722
         env:
           IMPECCABLE_SKILL_DIR: .github/skills/impeccable
         with:
