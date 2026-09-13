@@ -6,7 +6,7 @@ const path = require("node:path");
 const { spawn, spawnSync } = require("node:child_process");
 const { test } = require("node:test");
 const { renderWrapper } = require("./main.cjs");
-const { digest, parseTrace, readTrace, TraceError } = require("./trace.cjs");
+const { MAX_TRACE_BYTES, digest, parseTrace, readTrace, TraceError } = require("./trace.cjs");
 
 function fixture(t) {
   const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "impeccable trace-test-")));
@@ -103,6 +103,15 @@ test("disables supported telemetry and update checks for native calls", (t) => {
   assert.equal(result.status, 0);
   assert.deepEqual(JSON.parse(result.stdout.toString()), ["1", "1"]);
   assert.equal(f.read().calls[0].command, "context");
+});
+
+test("preserves the visible executable argv[0] while selecting the native image explicitly", (t) => {
+  const f = fixture(t);
+  fs.writeFileSync(f.wrapper, renderWrapper(process.execPath, f.filename, f.header.trace_id));
+  const result = f.invoke(["-e", "process.stdout.write(process.argv0)"]);
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout.toString(), f.wrapper);
+  assert.equal(f.read().calls[0].return_code, 0);
 });
 
 test("keeps help/version invocations separate from detect commands", (t) => {
@@ -223,7 +232,7 @@ test("rejects missing, mismatched, duplicate, and truncated arming data", (t) =>
   const encoded = JSON.stringify(f.header) + "\n";
   assert.throws(() => parseTrace("", f.header), TraceError);
   assert.throws(() => parseTrace("{}\n", f.header), /trace_not_armed/);
-  assert.throws(() => parseTrace(encoded.slice(0, -1), f.header), /truncated/);
+  assert.throws(() => parseTrace(encoded.slice(0, -1), f.header), /trace_not_armed/);
   assert.throws(() => parseTrace(encoded + encoded, f.header), /multiple_arming/);
   assert.throws(() => parseTrace(encoded, { ...f.header, trace_id: randomUUID() }), /identity_mismatch/);
   assert.throws(() => parseTrace(JSON.stringify({ ...f.header, trace_id: { toString: "bad" } }) + "\n", f.header), TraceError);
@@ -236,6 +245,24 @@ test("does not expose additional untrusted record fields", (t) => {
   for (const row of rows) row.secret = "do-not-publish-this";
   const trace = parseTrace(rows.map((row) => JSON.stringify(row)).join("\n") + "\n", f.header);
   assert.equal(JSON.stringify(trace).includes("do-not-publish-this"), false);
+});
+
+test("retains completed calls before a truncated or oversized tail", (t) => {
+  const f = fixture(t);
+  assert.equal(f.invoke(["detect", "2"]).status, 2);
+  const complete = fs.readFileSync(f.filename, "utf8");
+  for (const [tail, issue] of [
+    ['{"event":"start"', "truncated_trace"],
+    ["x".repeat(MAX_TRACE_BYTES), "oversized_trace"],
+  ]) {
+    fs.writeFileSync(f.filename, complete + tail);
+    const result = f.collect();
+    assert.equal(result.outcome, "incomplete");
+    assert.ok(result.issues.includes(issue));
+    assert.equal(result.calls.length, 1);
+    assert.equal(result.calls[0].status, "completed");
+    assert.equal(result.calls[0].return_code, 2);
+  }
 });
 
 test("collects scoped records and explicitly reports writer degradation", (t) => {
@@ -275,8 +302,8 @@ test("rejects redirected trace paths, symlinks, and oversized files", (t) => {
   fs.symlinkSync(outside, f.filename);
   assert.throws(() => f.collect());
   fs.unlinkSync(f.filename);
-  fs.writeFileSync(f.filename, Buffer.alloc(1024 * 1024 + 1, 65));
-  assert.throws(() => f.collect(), /invalid_trace_file/);
+  fs.writeFileSync(f.filename, Buffer.alloc(MAX_TRACE_BYTES + 1, 65));
+  assert.throws(() => f.collect(), /trace_not_armed/);
 });
 
 test("a FIFO cannot hang the post collector", (t) => {

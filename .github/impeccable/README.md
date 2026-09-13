@@ -99,7 +99,8 @@ logging failure is reported as incomplete. `no_call_evidence` means zero
 recorded calls, not proof of no execution: failures may prevent recording, and
 direct invocation of the native copy bypasses the wrapper. Logging errors warn
 without preventing native execution. Traces remain under `RUNNER_TEMP` for
-runner cleanup.
+runner cleanup. Complete records within the bounded prefix remain visible if
+a later record is truncated or the trace exceeds the collection limit.
 
 Changes to the action require refreshing its full commit pin in the workflow.
 The native checksum input must match the engine download pin. Tracer tests run

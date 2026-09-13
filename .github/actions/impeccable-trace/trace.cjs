@@ -1,3 +1,7 @@
+const { createHash } = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+
 const MAX_TRACE_BYTES = 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const HASH = /^[0-9a-f]{64}$/;
@@ -18,13 +22,19 @@ function digest(filename) {
 }
 
 function parseTrace(text, expected) {
-  if (!text || Buffer.byteLength(text) > MAX_TRACE_BYTES || !text.endsWith("\n")) {
-    throw new TraceError("missing_oversized_or_truncated_trace");
-  }
   let armed = false;
   const calls = new Map();
   const issues = [];
   const issue = (code) => { if (!issues.includes(code)) issues.push(code); };
+  if (typeof text !== "string") throw new TraceError("invalid_trace_input");
+  if (Buffer.byteLength(text) > MAX_TRACE_BYTES) {
+    text = Buffer.from(text).subarray(0, MAX_TRACE_BYTES).toString("utf8");
+    issue("oversized_trace");
+  }
+  if (!text.endsWith("\n")) {
+    text = text.slice(0, text.lastIndexOf("\n") + 1);
+    issue("truncated_trace");
+  }
   for (const line of text.slice(0, -1).split("\n")) {
     let row;
     try {
@@ -126,16 +136,24 @@ function readTrace({ root, filename, expected, entrypoint, native }) {
     filename, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
   );
   let text;
+  let oversized = false;
   try {
     const stat = fs.fstatSync(descriptor);
-    if (!stat.isFile() || stat.size > MAX_TRACE_BYTES) throw new TraceError("invalid_trace_file");
+    if (!stat.isFile()) throw new TraceError("invalid_trace_file");
+    oversized = stat.size > MAX_TRACE_BYTES;
     const buffer = Buffer.alloc(MAX_TRACE_BYTES + 1);
-    const length = fs.readSync(descriptor, buffer, 0, buffer.length, 0);
+    let length = 0;
+    while (length < buffer.length) {
+      const count = fs.readSync(descriptor, buffer, length, buffer.length - length, length);
+      if (count === 0) break;
+      length += count;
+    }
     text = buffer.subarray(0, length).toString("utf8");
   } finally {
     fs.closeSync(descriptor);
   }
   const result = parseTrace(text, expected);
+  if (oversized && !result.issues.includes("oversized_trace")) result.issues.push("oversized_trace");
   try {
     if (digest(entrypoint) !== expected.wrapper_sha256 || digest(native) !== expected.native_sha256) {
       result.issues.push("installed_entrypoint_or_native_changed");
@@ -151,7 +169,4 @@ function readTrace({ root, filename, expected, entrypoint, native }) {
   return result;
 }
 
-module.exports = { MAX_TRACE_BYTES, UUID, HASH, TraceError, digest, parseTrace, readTrace };
-const { createHash } = require("node:crypto");
-const fs = require("node:fs");
-const path = require("node:path");
+module.exports = { MAX_TRACE_BYTES, TraceError, digest, parseTrace, readTrace };

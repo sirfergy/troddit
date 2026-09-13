@@ -72,7 +72,8 @@ def main():
     environment = dict(os.environ, IMPECCABLE_NO_TELEMETRY="1", IMPECCABLE_NO_UPDATE_CHECK="1")
     try:
         child = subprocess.Popen(
-            [NATIVE, *args], stdin=None, stdout=None, stderr=None, env=environment
+            [sys.argv[0], *args], executable=NATIVE,
+            stdin=None, stdout=None, stderr=None, env=environment
         )
     except OSError as error:
         record({"event": "launch_error", "call_id": call_id, "error_number": error.errno or errno.EIO})
