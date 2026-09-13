@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Troddit review canary</title>
+    <style>
+      body {
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 1rem;
+        color: #222;
+        background: #fff;
+        font-family: system-ui, sans-serif;
+      }
+      h1 {
+        background: linear-gradient(90deg, #a855f7, #06b6d4);
+        background-clip: text;
+        color: transparent;
+      }
+      button {
+        margin: 1rem;
+        padding: 0.75rem;
+        border: 1px solid #ccc;
+        border-radius: 0.5rem;
+        background: #fff;
+      }
+      button:focus,
+      button:focus-visible {
+        outline: none;
+        box-shadow: none;
+      }
+      .save-button {
+        color: #b8b8b8;
+        font-size: 10px;
+      }
+      .history-action {
+        padding: 1rem;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Temporary review preview. Do not merge or deploy.</p>
+    <h1>Reader preferences preview</h1>
+    <button id="search-button" onclick="document.getElementById('status').textContent = 'Search opened'">
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20">
+        <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2" />
+        <path d="m12 12 5 5" stroke="currentColor" stroke-width="2" />
+      </svg>
+    </button>
+    <button class="save-button" onclick="document.getElementById('status').textContent = 'Preferences saved'">
+      Save preferences
+    </button>
+    <div class="history-action" onclick="document.getElementById('status').textContent = 'History cleared'">
+      Clear reading history
+    </div>
+    <p id="status" aria-live="polite">No action yet.</p>
+  </body>
+</html>
