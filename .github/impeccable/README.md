@@ -68,6 +68,10 @@ in the actual reviewer job log, and verify that the post marker follows the
 reviewer work. This checks that action state and a temporary file survive until
 cleanup; it does not wrap the engine or establish detector invocation. A missing
 post marker is an unverified collection path, not evidence of zero detector calls.
+`IMPECCABLE_TRACE_PROBE_POST_ENTERED` distinguishes callback entry from successful
+state verification. The probe is left under `RUNNER_TEMP` for runner cleanup, so
+an unrelated cleanup failure cannot hide the logging evidence.
+Changes to the probe require refreshing its action commit pin in the workflow.
 
 Review instructions do not grant network access or enable restricted tools.
 The launcher can download an engine, so reviewers must not use it to bootstrap

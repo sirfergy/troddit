@@ -2,6 +2,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { requiredEnv, runIdentity } = require("./main.cjs");
 
+console.log("IMPECCABLE_TRACE_PROBE_POST_ENTERED");
+
 const identity = runIdentity();
 const root = fs.realpathSync(requiredEnv("RUNNER_TEMP"));
 const filename = requiredEnv("STATE_impeccable_probe_file");
@@ -23,8 +25,6 @@ if (fs.readFileSync(filename, "utf8") !== `${probeId}\n`) {
   throw new Error("Impeccable logging probe state did not survive unchanged");
 }
 
-fs.unlinkSync(filename);
-fs.rmdirSync(directory);
 console.log("IMPECCABLE_TRACE_PROBE_POST " + JSON.stringify({
   ...identity,
   probe_id: probeId,
