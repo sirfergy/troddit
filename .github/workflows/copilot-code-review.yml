@@ -7,11 +7,13 @@ on:
     paths:
       - .github/workflows/copilot-code-review.yml
       - .github/skills/impeccable/scripts/VERSION
+      - .github/actions/impeccable-trace/**
   push:
     branches: [main]
     paths:
       - .github/workflows/copilot-code-review.yml
       - .github/skills/impeccable/scripts/VERSION
+      - .github/actions/impeccable-trace/**
 
 jobs:
   copilot-setup-steps:
@@ -96,3 +98,6 @@ jobs:
               raise SystemExit("Detector did not identify the positive control")
           print(f"Impeccable detector smoke test passed ({len(findings)} findings).")
           PY
+
+      - name: Probe post-review logging
+        uses: sirfergy/troddit/.github/actions/impeccable-trace@2269831a31f00ac40a7410861ab82926132de39a
