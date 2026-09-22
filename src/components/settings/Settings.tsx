@@ -275,7 +275,7 @@ const Settings = () => {
         }
       >
         {Object.keys(categories).map((category, i) => (
-          <Tab key={category} className={" outline-none "}>
+          <Tab key={category} aria-label={category} className={" outline-none "}>
             {({ selected }) => (
               <div
                 className={
