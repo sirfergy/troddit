@@ -9,7 +9,6 @@ module.exports = withPlausibleProxy()(
   withPWA({
     output: "standalone",
     reactStrictMode: false, //true
-    swcMinify: true,
     compiler: {
       removeConsole: process.env.NODE_ENV !== "development",
     },

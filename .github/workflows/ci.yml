@@ -50,3 +50,6 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NEXT_PUBLIC_BUILD_REVISION: ${{ github.sha }}
+
+      - name: Verify PWA service worker
+        run: test -s public/sw.js

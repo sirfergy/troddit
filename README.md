@@ -81,7 +81,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 To contribute create a branch and submit a PR!
 
-Run `npm test` with Node.js 24 or newer for the regression tests. Run `npm run typecheck` to check all TypeScript sources under `src/`, `lib/`, and `types/`, and `npm run lint` and `npm run build` for the application checks.
+Use Node.js 24 or newer. Run `npm test` for regression tests, `npm run typecheck` for TypeScript sources, and `npm run lint` and `npm run build` for application checks. Development and production builds use Webpack to preserve the PWA service worker; after a build, verify `public/sw.js` is present.
 
 Project-scoped [Impeccable tooling and the initial interface audit](.github/impeccable/README.md)
 are available for Copilot. Automatic edit hooks are disabled; audits report findings
